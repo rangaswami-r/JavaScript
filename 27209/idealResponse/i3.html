@@ -3,29 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduApp</title>
+    <title>EduApp Enhanced</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Arial', sans-serif; }
         .sidebar { height: 100vh; overflow-y: auto; }
         .content-area { padding: 20px; }
         .nav-item { cursor: pointer; }
-        .quiz-option {
-            margin-bottom: 10px;
-        }
-        .form-check-input:checked ~ .form-check-label {
-            font-weight: bold;
-            color: #007bff;
-        }
-        .form-check-label {
-            cursor: pointer;
-        }
+        .quiz-option { margin-bottom: 10px; }
+        .form-check-input:checked ~ .form-check-label { font-weight: bold; color: #007bff; }
+        .form-check-label { cursor: pointer; }
+        #chartContainer { width: 100%; height: 300px; }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="#">EduApp</a>
+    <a class="navbar-brand" href="#">EduApp Enhanced</a>
 </nav>
 
 <div class="container-fluid">
@@ -44,49 +39,131 @@
             <div class="content-area" id="contentArea">
                 <!-- Content will be dynamically loaded here -->
             </div>
+            <div id="chartContainer"></div>
         </main>
     </div>
 </div>
 
 <!-- Quiz Modal -->
-<div class="modal fade" id="quizModal" tabindex="-1" role="dialog" aria-labelledby="quizModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="quizModalLabel">Quiz</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body" id="quizContent">
-        <!-- Quiz content will be dynamically loaded here -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="submitQuiz()">Submit</button>
-      </div>
+<div class="modal fade" id="quizModal" tabindex="-1" aria-labelledby="quizModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quizModalLabel">Quiz</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="quizContent">
+                <!-- Quiz content will be dynamically loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitQuiz()">Submit</button>
+            </div>
+        </div>
     </div>
-  </div>
+</div>
+
+<!-- Incorrect Answers Modal -->
+<div class="modal fade" id="incorrectAnswersModal" tabindex="-1" aria-labelledby="incorrectAnswersModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="incorrectAnswersModalLabel">Incorrect Answers</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="incorrectAnswersContent">
+                <!-- Incorrect answers with explanations will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const subjectList = document.getElementById('subjectList');
     const contentArea = document.getElementById('contentArea');
-    const quizModal = new bootstrap.Modal(document.getElementById('quizModal'));
-    let currentSubject = '';
+    const chartContainer = document.getElementById('chartContainer');
+    const quizModalHtml = document.getElementById('quizModal');
+    const quizModal = new bootstrap.Modal(quizModalHtml);
+    const incorrectAnswersModal = new bootstrap.Modal(document.getElementById('incorrectAnswersModal'));
+    let currentSubject = 'math';
+    const userProgress = JSON.parse(localStorage.getItem('userProgress')) || {};
+
+    function updateProgress(subject, score, incorrect) {
+        userProgress[subject] = userProgress[subject] || {total: 0, correct: 0, incorrect: []};
+        userProgress[subject].total++;
+        userProgress[subject].correct += score;
+        userProgress[subject].incorrect.push(...incorrect);
+        localStorage.setItem('userProgress', JSON.stringify(userProgress));
+        displayProgress();
+    }
+
+    function displayProgress() {
+        const labels = Object.keys(userProgress);
+        const correctData = labels.map(subject => userProgress[subject].correct);
+        const totalData = labels.map(subject => userProgress[subject].total);
+        const incorrectData = labels.map(subject => userProgress[subject].incorrect.length);
+
+        const ctx = document.createElement('canvas');
+        chartContainer.innerHTML = '';
+        chartContainer.appendChild(ctx);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Correct Answers',
+                    data: correctData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Total Attempts',
+                    data: totalData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Incorrect Answers',
+                    data: incorrectData,
+                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                    borderColor: 'rgba(255, 205, 86, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
 
     subjectList.addEventListener('click', function(e) {
         if(e.target.tagName === 'LI') {
-            loadSubject(e.target.getAttribute('data-subject'));
+            currentSubject = e.target.getAttribute('data-subject');
+            loadSubject(currentSubject);
+            // Update the active class
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            e.target.classList.add('active');
         }
     });
 
     function loadSubject(subject) {
-        currentSubject = subject;
         let content = '';
         switch(subject) {
             case 'math':
@@ -109,44 +186,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
         contentArea.innerHTML = content;
+        displayProgress();
     }
 
     window.startQuiz = function(subject) {
-        const quiz = {
-            math: [
-                { q: "What is 2 + 2?", options: ["3", "4", "5"], a: "4" },
-                { q: "What is 5 * 6?", options: ["30", "32", "28"], a: "30" }
-            ],
-            science: [
-                { q: "What is the formula for water?", options: ["H2O", "O2", "CO2"], a: "H2O" },
-                { q: "What planet is known as the Red Planet?", options: ["Earth", "Mars", "Jupiter"], a: "Mars" }
-            ],
-            history: [
-                { q: "When did World War II end?", options: ["1945", "1944", "1946"], a: "1945" },
-                { q: "Who was the first President of the USA?", options: ["Abraham Lincoln", "George Washington", "Thomas Jefferson"], a: "George Washington" }
-            ]
-        };
-
-        let questions = quiz[subject];
-        let quizContent = '<form id="quizForm">';
-
-        questions.forEach((q, index) => {
-            quizContent += `<div class="form-group">
-                                <label>${index + 1}. ${q.q}</label>
-                                ${q.options.map((option, i) => `
-                                    <div class="form-check quiz-option">
-                                        <input class="form-check-input" type="radio" name="question${index}" value="${option}" id="q${index}o${i}">
-                                        <label class="form-check-label" for="q${index}o${i}">
-                                            ${option}
-                                        </label>
-                                    </div>
-                                `).join('')}
-                            </div>`;
-        });
-
-        quizContent += '</form>';
-
-        document.getElementById('quizContent').innerHTML = quizContent;
+        const questions = getQuizQuestions(subject);
+        const quizHtml = generateQuizHtml(questions);
+        document.getElementById('quizContent').innerHTML = quizHtml;
         quizModal.show();
     };
 
@@ -156,41 +202,93 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const quiz = {
-            math: [
-                { a: "4" },
-                { a: "30" }
-            ],
-            science: [
-                { a: "H2O" },
-                { a: "Mars" }
-            ],
-            history: [
-                { a: "1945" },
-                { a: "George Washington" }
-            ]
-        };
-
-        const answers = quiz[currentSubject];
-        if (!answers) {
-            alert('No quiz available for this subject.');
-            return;
-        }
-
         const form = document.getElementById('quizForm');
-        let correctAnswers = 0;
-        let totalQuestions = answers.length;
+        const answers = getQuizAnswers(currentSubject);
+        let score = 0;
+        incorrectAnswers = [];
 
-        answers.forEach((answer, index) => {
-            const selected = form.querySelector(`input[name="question${index}"]:checked`);
-            if (selected && selected.value === answer.a) {
-                correctAnswers++;
+        // Loop through each question and check the selected answer
+        Array.from(form.elements).forEach((element, index) => {
+            const questionId = element.name;
+            const selectedAnswer = element.value;
+            if (element.type === 'radio' && element.checked) {
+                const questionIndex = parseInt(element.name.replace('question', ''));
+                if (element.value === answers[questionIndex]) {
+                    score++;
+                } else {
+                    incorrectAnswers.push({questionId, selectedAnswer});
+                }
             }
         });
 
-        alert(`You got ${correctAnswers} out of ${totalQuestions} correct!`);
+        updateProgress(currentSubject, score, incorrectAnswers);
+        alert(`You scored ${score} out of ${answers.length}.`);
         quizModal.hide();
+        displayIncorrectAnswers();
     };
+
+    function getQuizQuestions(subject) {
+        const questions = {
+            math: [
+                { q: "What is 2 + 2?", options: ["3", "4", "5"], type: "mc", a: "4" },
+                { q: "Is 5 an odd number?", options: ["True", "False"], type: "tf", a: "True" }
+            ],
+            science: [
+                { q: "What is the formula for water?", options: ["H2O", "O2", "CO2"], type: "mc", a: "H2O" },
+                { q: "Is Earth flat?", options: ["True", "False"], type: "tf", a: "False" }
+            ],
+            history: [
+                { q: "When did World War II end?", options: ["1945", "1944", "1946"], type: "mc", a: "1945" },
+                { q: "Was Cleopatra a pharaoh of Ancient Egypt?", options: ["True", "False"], type: "tf", a: "True" }
+            ]
+        };
+        return questions[subject];
+    }
+
+    function getQuizAnswers(subject) {
+        const questions = getQuizQuestions(subject);
+        return questions.map(q => q.a);
+    }
+
+    function generateQuizHtml(questions) {
+        let html = '<form id="quizForm">';
+        questions.forEach((question, index) => {
+            html += `<div class="form-group">
+                        <label>${index + 1}. ${question.q}</label>
+                        ${question.options.map(option => `
+                            <div class="form-check quiz-option">
+                                <input class="form-check-input" type="radio" name="question${index}" value="${option}" id="q${index}o${option}">
+                                <label class="form-check-label" for="q${index}o${option}">${option}</label>
+                            </div>
+                        `).join('')}
+                     </div>`;
+        });
+        html += '</form>';
+        return html;
+    }
+
+    function displayIncorrectAnswers() {
+        const incorrectAnswersContent = document.getElementById('incorrectAnswersContent');
+        if (!incorrectAnswersContent) {
+            console.error('Element with ID "incorrectAnswersContent" not found.');
+            return;
+        }
+        if (incorrectAnswers.length === 0) {
+            incorrectAnswersContent.innerHTML = '<p>All answers are correct!</p>';
+        } else {
+            const html = incorrectAnswers.map(answer => `
+                <p>Question ID: ${answer.questionId}, Selected Answer: ${answer.selectedAnswer}</p>
+            `).join('');
+            incorrectAnswersContent.innerHTML = html;
+        }
+        incorrectAnswersModal.show();
+    }
+
+    function setupDailyReminder() {
+        // For demo purposes, just alert a message
+        alert('Daily reminder set! (This is a placeholder for actual reminder functionality)');
+    }
+    setupDailyReminder();
 
     // Initial load
     loadSubject('math');
