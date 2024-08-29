@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational App</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body { padding-top: 60px; }
+        .nav-item { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <a class="navbar-brand">EduApp</a>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto" id="subjectNav">
+            <li class="nav-item" data-subject="Math">Math</li>
+            <li class="nav-item" data-subject="Science">Science</li>
+            <li class="nav-item" data-subject="History">History</li>
+            <li class="nav-item" data-subject="English">English</li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container" id="mainContent">
+    <!-- Content will be loaded here -->
+</div>
+
+<script>
+    const subjects = {
+        'Math': { lessons: 'Learn about algebra...', quiz: ['2+2=?', '5+5=?'], testPaper: 'MathTest.pdf' },
+        'Science': { lessons: 'Explore the world of physics...', quiz: ['Gravity on Earth=?', 'Speed of light=?'], testPaper: 'ScienceTest.pdf' },
+        'History': { lessons: 'Discover ancient civilizations...', quiz: ['When was WWII?', 'First man on moon?'], testPaper: 'HistoryTest.pdf' },
+        'English': { lessons: 'Study grammar...', quiz: ['Correct form of "to be"?', 'Plural of sheep?'], testPaper: 'EnglishTest.pdf' }
+    };
+
+    document.getElementById('subjectNav').addEventListener('click', function(event) {
+        if(event.target.tagName === 'LI') {
+            const subject = event.target.getAttribute('data-subject');
+            const content = subjects[subject];
+            document.getElementById('mainContent').innerHTML = `
+                <h2>${subject}</h2>
+                <p>${content.lessons}</p>
+                <h3>Quiz</h3>
+                <ul id="quizList"></ul>
+                <h3>Test Paper</h3>
+                <button onclick="alert('Download or view ${content.testPaper}')">Download Test Paper</button>
+            `;
+            content.quiz.forEach((question, index) => {
+                document.getElementById('quizList').innerHTML += `<li>${question} <input type="text" placeholder="Answer"></li>`;
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
