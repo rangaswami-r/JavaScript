@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Game Enhanced</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .game-board {
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #000;
+            float: left;
+            font-size: 50px;
+            text-align: center;
+            line-height: 100px;
+            cursor: pointer;
+        }
+        .cell:hover {
+            background: #f0f0f0;
+        }
+        #status {
+            text-align: center;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        .btn-restart {
+            display: block;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center">SOS Game Enhanced</h1>
+    <div id="board" class="game-board"></div>
+    <button id="restart" class="btn btn-primary btn-restart" style="display: none;">Restart Game</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    const boardElement = document.getElementById('board');
+    const statusElement = document.getElementById('status');
+    const restartButton = document.getElementById('restart');
+    let board = ['', '', '', '', '', '', '', '', ''];
+    let currentPlayer = 'S';
+    let gameActive = true;
+
+    function createBoard() {
+        for(let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.index = i;
+            cell.addEventListener('click', makeMove);
+            boardElement.appendChild(cell);
+        }
+    }
+
+    function makeMove(e) {
+        const index = e.target.dataset.index;
+        if (board[index] !== '' || !gameActive) return;
+
+        board[index] = currentPlayer;
+        e.target.textContent = currentPlayer;
+        if (checkForSOS()) {
+            statusElement.textContent = `Player ${currentPlayer} has formed SOS!`;
+            endGame();
+        } else if (!board.includes('')) {
+            statusElement.textContent = "It's a draw!";
+            endGame();
+        } else {
+            currentPlayer = currentPlayer === 'S' ? 'O' : 'S';
+            statusElement.textContent = `Player ${currentPlayer}'s turn`;
+        }
+    }
+
+    function checkForSOS() {
+        const winConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+            [0, 4, 8], [2, 4, 6] // diagonals
+        ];
+        return winConditions.some(condition => {
+            return condition.every(idx => board[idx] === 'S' || board[idx] === 'O') &&
+                   (board[condition[0]] === 'S' && board[condition[1]] === 'O' && board[condition[2]] === 'S');
+        });
+    }
+
+    function endGame() {
+        gameActive = false;
+        restartButton.style.display = 'block';
+    }
+
+    restartButton.addEventListener('click', () => {
+        board = ['', '', '', '', '', '', '', '', ''];
+        Array.from(boardElement.children).forEach(cell => cell.textContent = '');
+        gameActive = true;
+        currentPlayer = 'S';
+        statusElement.textContent = `Player S's turn`;
+        restartButton.style.display = 'none';
+    });
+
+    createBoard();
+    statusElement.textContent = `Player S's turn`;
+</script>
+</body>
+</html>
