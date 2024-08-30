@@ -1,133 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduApp</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-        }
-
-        .sidebar {
-            height: 100vh;
-            overflow-y: auto;
-        }
-
-        .content-area {
-            padding: 20px;
-        }
-
-        .nav-item {
-            cursor: pointer;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Educational App</title>
+<style>
+    body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; }
+    .container { max-width: 1200px; margin: auto; }
+    .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .subject-card { background: #fff; border: 1px solid #ddd; padding: 20px; text-align: center; cursor: pointer; transition: transform 0.3s; }
+    .subject-card:hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .lessons, .lesson-content { margin-top: 20px; padding: 20px; background: #fff; }
+    .lesson-list { list-style: none; padding: 0; }
+    .lesson-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .lesson-list li:hover { background: #f9f9f9; }
+    .hidden { display: none; }
+</style>
 </head>
-
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#">EduApp</a>
-    </nav>
+<div class="container">
+    <h1>Educational App</h1>
+    <div id="subjects" class="subjects-grid"></div>
+    <div id="lessons" class="lessons hidden"></div>
+    <div id="lessonContent" class="lesson-content hidden"></div>
+</div>
 
-    <div class="container-fluid">
-        <div class="row">
-            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" id="sidebarMenu">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column" id="subjectList">
-                        <li class="nav-item" data-subject="math">Mathematics</li>
-                        <li class="nav-item" data-subject="science">Science</li>
-                        <li class="nav-item" data-subject="history">History</li>
-                    </ul>
-                </div>
-            </nav>
+<script>
+    const subjects = [
+        {name: "Math", lessons: ["Algebra", "Geometry", "Calculus"]},
+        {name: "Science", lessons: ["Physics", "Chemistry", "Biology"]},
+        {name: "History", lessons: ["Ancient History", "Modern History"]},
+        {name: "English", lessons: ["Grammar", "Literature"]}
+    ];
 
-            <main class="col-md-9 ml-sm-auto col-lg-10 px-md-4" role="main">
-                <div class="content-area" id="contentArea">
-                    <!-- Content will be dynamically loaded here -->
-                </div>
-            </main>
-        </div>
-    </div>
+    const content = {
+        "Algebra": "Algebra involves equations with variables...",
+        "Physics": "Physics is the study of matter, energy..."
+        // Add more content here for each lesson
+    };
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const subjectList = document.getElementById('subjectList');
-            const contentArea = document.getElementById('contentArea');
+    document.getElementById('subjects').innerHTML = subjects.map(subject =>
+        `<div class="subject-card" onclick="showLessons('${subject.name}')">${subject.name}</div>`
+    ).join('');
 
-            subjectList.addEventListener('click', function (e) {
-                if (e.target.tagName === 'LI') {
-                    loadSubject(e.target.getAttribute('data-subject'));
-                }
-            });
+    function showLessons(subjectName) {
+        const subject = subjects.find(sub => sub.name === subjectName);
+        document.getElementById('lessons').innerHTML = `<h2>${subjectName}</h2><ul class="lesson-list">${subject.lessons.map(lesson => `<li onclick="showContent('${lesson}')">${lesson}</li>`).join('')}</ul>`;
+        document.getElementById('lessons').classList.remove('hidden');
+        document.getElementById('lessonContent').classList.add('hidden');
+    }
 
-            function loadSubject(subject) {
-                // Here we simulate content loading. In a real scenario, you might fetch this from a server.
-                let content = '';
-                switch (subject) {
-                    case 'math':
-                        content = `<h2>Mathematics</h2>
-                           <p>Lesson on Algebra...</p>
-                           <button onclick="startQuiz('math')">Start Math Quiz</button>
-                           <a href="#" download="math_test.pdf">Download Test Paper</a>`;
-                        break;
-                    case 'science':
-                        content = `<h2>Science</h2>
-                           <p>Lesson on Physics...</p>
-                           <button onclick="startQuiz('science')">Start Science Quiz</button>
-                           <a href="#" download="science_test.pdf">Download Test Paper</a>`;
-                        break;
-                    case 'history':
-                        content = `<h2>History</h2>
-                           <p>Lesson on World War II...</p>
-                           <button onclick="startQuiz('history')">Start History Quiz</button>
-                           <a href="#" download="history_test.pdf">Download Test Paper</a>`;
-                        break;
-                }
-                contentArea.innerHTML = content;
-            }
-
-            function startQuiz(subject) {
-                // Simple quiz example, this should be expanded with actual questions
-                let questions = {
-                    math: [{q: "What is 2 + 2?", a: "4"}],
-                    science: [{q: "What is the formula for water?", a: "H2O"}],
-                    history: [{q: "When did World War II end?", a: "1945"}]
-                };
-                let quiz = questions[subject];
-                let result = prompt(quiz[0].q);
-                if (result === quiz[0].a) {
-                    alert("Correct!");
-                } else {
-                    alert("Incorrect. The correct answer is: " + quiz[0].a);
-                }
-            }
-
-            // Initial load
-            loadSubject('math');
-        });
-    </script>
+    function showContent(lessonName) {
+        document.getElementById('lessonContent').innerHTML = `<h2>${lessonName}</h2><p>${content[lessonName] || "Content coming soon..."}</p>`;
+        document.getElementById('lessonContent').classList.remove('hidden');
+    }
+</script>
 
 </body>
-
-</html><!DOCTYPE html>
-<html>
-
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>replit</title>
-  <link href="style.css" rel="stylesheet" type="text/css" />
-</head>
-
-<body>
-  Hello world
-  <script src="script.js"></script>
-</body>
-
 </html>
