@@ -1,155 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced EduApp</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
-    <style>
-        body { font-family: 'Arial', sans-serif; }
-        .sidebar { height: 100vh; overflow-y: auto; }
-        .content-area { padding: 20px; }
-        .nav-item { cursor: pointer; }
-        .quiz-option { margin-bottom: 10px; }
-        .form-check-label { cursor: pointer; }
-        .progress-chart { width: 100%; height: 300px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Educational App with Quizzes</title>
+<style>
+    body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; }
+    .container { max-width: 1200px; margin: auto; }
+    .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .subject-card, .quiz-button { background: #fff; border: 1px solid #ddd; padding: 20px; text-align: center; cursor: pointer; transition: transform 0.3s; }
+    .subject-card:hover, .quiz-button:hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .lessons, .lesson-content, .quiz { margin-top: 20px; padding: 20px; background: #fff; }
+    .lesson-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .lesson-list li:hover { background: #f9f9f9; }
+    .hidden { display: none; }
+    .quiz-button { display: inline-block; margin: 10px 0; background-color: #4CAF50; color: white; }
+    #scoreboard { margin-top: 20px; background: #fff; padding: 20px; }
+    #scoreboard table { width: 100%; border-collapse: collapse; }
+    #scoreboard th, #scoreboard td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    #scoreboard th { background-color: #f2f2f2; }
+</style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="#">Enhanced EduApp</a>
-</nav>
-
-<div class="container-fluid">
-    <div class="row">
-        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar" id="sidebarMenu">
-            <div class="position-sticky pt-3">
-                <ul class="nav flex-column" id="subjectList">
-                    <li class="nav-item" data-subject="math">Mathematics</li>
-                    <li class="nav-item" data-subject="science">Science</li>
-                    <li class="nav-item" data-subject="history">History</li>
-                </ul>
-            </div>
-        </nav>
-
-        <main class="col-md-9 ml-sm-auto col-lg-10 px-md-4" role="main">
-            <div class="content-area" id="contentArea">
-                <!-- Content dynamically loaded here -->
-            </div>
-            <div id="progressChartArea" style="display:none;">
-                <canvas id="progressChart" class="progress-chart"></canvas>
-            </div>
-        </main>
+<div class="container">
+    <h1>Educational App with Quizzes</h1>
+    <div id="subjects" class="subjects-grid"></div>
+    <div id="lessons" class="lessons hidden"></div>
+    <div id="lessonContent" class="lesson-content hidden"></div>
+    <div id="quizSection" class="quiz hidden"></div>
+    <div id="scoreboard" class="hidden">
+        <h2>Scoreboard</h2>
+        <table>
+            <thead><tr><th>Subject</th><th>Score</th></tr></thead>
+            <tbody id="scoreboardBody"></tbody>
+        </table>
     </div>
 </div>
 
-<div class="modal fade" id="quizModal" tabindex="-1" role="dialog">
-    <!-- Modal content remains largely the same for brevity -->
-</div>
-
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const contentArea = document.getElementById('contentArea');
-    const quizModal = new bootstrap.Modal(document.getElementById('quizModal'));
-    const progressChartArea = document.getElementById('progressChartArea');
-    let ctx = document.getElementById('progressChart').getContext('2d');
+    const subjects = [
+        {name: "Math", lessons: ["Algebra", "Geometry", "Calculus"]},
+        {name: "Science", lessons: ["Physics", "Chemistry", "Biology"]},
+        {name: "History", lessons: ["Ancient History", "Modern History"]},
+        {name: "English", lessons: ["Grammar", "Literature"]}
+    ];
 
-    function loadSubject(subject) {
-        // Simplified content loading for demonstration
-        contentArea.innerHTML = `<h2>${subject.charAt(0).toUpperCase() + subject.slice(1)}</h2>
-                                 <p>Here's some content about ${subject}...</p>
-                                 <button onclick="startQuiz('${subject}')" class="btn btn-primary">Take a Quiz</button>
-                                 <button onclick="showProgress()" class="btn btn-info">Show Progress</button>`;
-        progressChartArea.style.display = 'none';
-    }
+    const quizzes = {
+        "Algebra": [{question: "What is x if 2x + 3 = 11?", answers: ["4", "5", "6"], correct: 0}],
+        // Add more quiz questions here for each lesson
+    };
 
-    function startQuiz(subject) {
-        // Placeholder for quiz questions
-        let questions = [
-            {question: "Sample question?", answers: ["A", "B", "C"], correctAnswer: "A"}
-        ];
+    let scores = JSON.parse(localStorage.getItem('quizScores')) || {};
 
-        let quizHTML = questions.map((q, index) => `
-            <div class="form-group">
-                <p>${index + 1}. ${q.question}</p>
-                ${q.answers.map(answer => `
-                    <div class="form-check quiz-option">
-                        <input class="form-check-input" type="radio" name="question${index}" value="${answer}" onchange="checkAnswer(this, '${q.correctAnswer}', ${index})">
-                        <label class="form-check-label">${answer}</label>
-                    </div>
-                `).join('')}
-            </div>
-        `).join('');
-
-        document.getElementById('quizContent').innerHTML = quizHTML;
-        quizModal.show();
-    }
-
-    function checkAnswer(element, correctAnswer, questionIndex) {
-        const userAnswer = element.value;
-        const result = userAnswer === correctAnswer;
-        if (result) {
-            alert('Correct!');
-            // Here you would typically update user's progress
-            updateProgress(element.name.split('question')[1], true);
-        } else {
-            alert('Incorrect. The correct answer was ' + correctAnswer);
-            updateProgress(element.name.split('question')[1], false);
+    function updateScoreboard() {
+        const scoreboardBody = document.getElementById('scoreboardBody');
+        scoreboardBody.innerHTML = '';
+        for(let subject in scores) {
+            scoreboardBody.innerHTML += `<tr><td>${subject}</td><td>${scores[subject]}</td></tr>`;
         }
+        document.getElementById('scoreboard').classList.remove('hidden');
     }
 
-    function updateProgress(question, isCorrect) {
-        let userProgress = JSON.parse(localStorage.getItem('userProgress')) || {};
-        userProgress[question] = (userProgress[question] || 0) + (isCorrect ? 1 : 0);
-        localStorage.setItem('userProgress', JSON.stringify(userProgress));
+    document.getElementById('subjects').innerHTML = subjects.map(subject =>
+        `<div class="subject-card" onclick="showLessons('${subject.name}')">${subject.name}</div>`
+    ).join('');
+
+    function showLessons(subjectName) {
+        const subject = subjects.find(sub => sub.name === subjectName);
+        document.getElementById('lessons').innerHTML = `<h2>${subjectName}</h2>
+        <ul class="lesson-list">
+        ${subject.lessons.map(lesson => `<li onclick="showContent('${lesson}')">${lesson} <button class="quiz-button" onclick="event.stopPropagation(); startQuiz('${lesson}')">Quiz</button></li>`).join('')}
+        </ul>`;
+        document.getElementById('lessons').classList.remove('hidden');
+        document.getElementById('lessonContent').classList.add('hidden');
+        document.getElementById('quizSection').classList.add('hidden');
     }
 
-    function showProgress() {
-        let userProgress = JSON.parse(localStorage.getItem('userProgress')) || {};
-        let labels = Object.keys(userProgress);
-        let scores = labels.map(q => userProgress[q] > 0 ? 1 : 0); // Simplified for demonstration
+    function showContent(lessonName) {
+        // Here you would typically load lesson content
+        document.getElementById('lessonContent').innerHTML = `<h2>${lessonName}</h2><p>Lesson content for ${lessonName}.</p>`;
+        document.getElementById('lessonContent').classList.remove('hidden');
+    }
 
-        if (progressChart) {
-            progressChart.destroy();
+    function startQuiz(lessonName) {
+        const quiz = quizzes[lessonName] || [];
+        if(quiz.length === 0) {
+            alert('No quiz available for this lesson.');
+            return;
         }
-
-        progressChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Progress',
-                    data: scores,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    yAxes: [{ticks: {beginAtZero: true, max: 1}}]
-                }
-            }
+        let html = `<h2>${lessonName} Quiz</h2>`;
+        quiz.forEach((q, index) => {
+            html += `<p>${index + 1}. ${q.question}</p>
+            ${q.answers.map((ans, ansIndex) => `<button onclick="answerQuiz(${index}, ${ansIndex}, '${lessonName}')">${ans}</button>`).join('')}`;
         });
-
-        progressChartArea.style.display = 'block';
+        document.getElementById('quizSection').innerHTML = html;
+        document.getElementById('quizSection').classList.remove('hidden');
     }
 
-    // Event listener for subject selection
-    document.getElementById('subjectList').addEventListener('click', function(e) {
-        if(e.target && e.target.nodeName == "LI") {
-            loadSubject(e.target.getAttribute('data-subject'));
+    function answerQuiz(questionIndex, answerIndex, lessonName) {
+        const correctAnswer = quizzes[lessonName][questionIndex].correct;
+        if (answerIndex === correctAnswer) {
+            if (!scores[lessonName]) scores[lessonName] = 0;
+            scores[lessonName] += 1;
+            alert('Correct!');
+        } else {
+            alert('Incorrect!');
         }
-    });
+        localStorage.setItem('quizScores', JSON.stringify(scores));
+        updateScoreboard();
+        document.getElementById('quizSection').classList.add('hidden');
+    }
 
-    // Initial load
-    loadSubject('math');
-});
+    updateScoreboard();
 </script>
 
 </body>
