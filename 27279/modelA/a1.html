@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Simple Quiz Application</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; }
+    #quiz-container { max-width: 600px; margin: 20px auto; }
+    .question { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+    .options button { margin: 5px; padding: 5px 10px; cursor: pointer; }
+    #result { margin-top: 20px; font-weight: bold; }
+    .hidden { display: none; }
+    select, button { padding: 10px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <select id="subjectSelect">
+        <option value="">Choose a Subject</option>
+        <option value="math">Math</option>
+        <option value="science">Science</option>
+    </select>
+    <button id="startQuiz" class="hidden">Start Quiz</button>
+    <div id="quizArea"></div>
+</div>
+
+<script>
+$(document).ready(function() {
+    const quizData = {
+        math: [
+            { q: "What is 2 + 2?", a: "B", options: ["3", "4", "5"] },
+            { q: "What is 5 * 5?", a: "C", options: ["20", "24", "25", "26"] },
+            { q: "Which number is prime?", a: "A", options: ["2", "4", "6", "8"] },
+            { q: "Square root of 16?", a: "B", options: ["3", "4", "5"] }
+        ],
+        science: [
+            { q: "What gas do plants absorb?", a: "B", options: ["Oxygen", "Carbon Dioxide", "Nitrogen"] },
+            { q: "What force pulls objects to Earth?", a: "A", options: ["Gravity", "Magnetism", "Friction"] },
+            { q: "Which planet is known as the Red Planet?", a: "C", options: ["Venus", "Jupiter", "Mars"] },
+            { q: "What element has the symbol 'O'?", a: "A", options: ["Oxygen", "Gold", "Iron"] }
+        ]
+    };
+
+    $("#subjectSelect").change(function() {
+        if($(this).val()) {
+            $("#startQuiz").removeClass('hidden');
+        } else {
+            $("#startQuiz").addClass('hidden');
+        }
+    });
+
+    $("#startQuiz").click(function() {
+        const subject = $("#subjectSelect").val();
+        generateQuiz(subject);
+    });
+
+    function generateQuiz(subject) {
+        $("#quizArea").html(''); // Clear previous quiz
+        quizData[subject].forEach((question, index) => {
+            let optionsHtml = question.options.map((opt, idx) =>
+                `<button onclick="checkAnswer(this, '${question.a}', ${index})">${String.fromCharCode(65 + idx)}) ${opt}</button>`
+            ).join('');
+            $("#quizArea").append(`
+                <div class="question">
+                    <p>Question ${index + 1}: ${question.q}</p>
+                    <div class="options">${optionsHtml}</div>
+                    <p id="result-${index}" class="hidden"></p>
+                </div>
+            `);
+        });
+    }
+
+    window.checkAnswer = function(elem, correctAnswer, questionIndex) {
+        const userAnswer = $(elem).text().charAt(0);
+        if(userAnswer === correctAnswer) {
+            $(`#result-${questionIndex}`).text('Correct!').removeClass('hidden').css('color', 'green');
+        } else {
+            $(`#result-${questionIndex}`).text(`Incorrect! The right answer was ${correctAnswer}.`).removeClass('hidden').css('color', 'red');
+        }
+        $(elem).siblings().prop('disabled', true); // Disable other buttons
+    };
+});
+</script>
+
+</body>
+</html>
