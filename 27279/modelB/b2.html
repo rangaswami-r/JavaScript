@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interactive Quiz Application</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body { font-family: 'Arial', sans-serif; background: #f4f4f4; }
+    #quiz-container { width: 600px; margin: 20px auto; background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .question { margin-bottom: 20px; padding: 15px; border-left: 5px solid #007BFF; }
+    .options button { margin: 5px; padding: 10px; cursor: pointer; border: 1px solid #ccc; background: #fff; }
+    .options button:hover { background: #f8f8f8; }
+    #result { color: green; font-weight: bold; }
+    .incorrect { color: red; }
+    .correct { color: green; }
+    .submit-btn { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+    .submit-btn:disabled { background: #cccccc; cursor: not-allowed; }
+    .score { font-weight: bold; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <select id="subjectSelect">
+        <option value="">Select a Subject</option>
+        <option value="math">Math</option>
+        <option value="science">Science</option>
+    </select>
+    <button id="startQuiz" style="display:none;">Start Quiz</button>
+    <div id="quizArea"></div>
+    <div id="scoreArea" style="display:none;" class="score">Your total score is: <span id="totalScore">0</span></div>
+</div>
+
+<script>
+$(document).ready(function() {
+    const quizData = {
+        math: [
+            { q: "What is 2 + 2?", a: "B", options: ["3", "4", "5"], marks: [2, -1] },
+            { q: "What is 5 * 5?", a: "C", options: ["20", "24", "25", "26"], marks: [2, -1] },
+            { q: "Which number is prime?", a: "A", options: ["2", "4", "6", "8"], marks: [2, -1] },
+            { q: "Square root of 16?", a: "B", options: ["3", "4", "5"], marks: [2, -1] }
+        ],
+        science: [
+            { q: "What gas do plants absorb?", a: "B", options: ["Oxygen", "Carbon Dioxide", "Nitrogen"], marks: [2, -1] },
+            { q: "What force pulls objects to Earth?", a: "A", options: ["Gravity", "Magnetism", "Friction"], marks: [2, -1] },
+            { q: "Which planet is known as the Red Planet?", a: "C", options: ["Venus", "Jupiter", "Mars"], marks: [2, -1] },
+            { q: "What element has the symbol 'O'?", a: "A", options: ["Oxygen", "Gold", "Iron"], marks: [2, -1] }
+        ]
+    };
+
+    let currentScore = 0;
+
+    $("#subjectSelect").change(function() {
+        if ($(this).val()) {
+            $("#startQuiz").show();
+        } else {
+            $("#startQuiz").hide();
+        }
+    });
+
+    $("#startQuiz").click(function() {
+        const subject = $("#subjectSelect").val();
+        generateQuiz(subject);
+    });
+
+    function generateQuiz(subject) {
+        $("#quizArea").html('');
+        $("#scoreArea").hide();
+        currentScore = 0;
+        quizData[subject].forEach((question, index) => {
+            let optionsHtml = question.options.map((opt, idx) =>
+                `<button class="option-btn" onclick="submitAnswer(${index}, this, '${question.a}', '${question.marks[0]}', '${question.marks[1]}')">${String.fromCharCode(65 + idx)}) ${opt}</button>`
+            ).join('');
+            $("#quizArea").append(`
+                <div class="question">
+                    <p>Question ${index + 1}: ${question.q}</p>
+                    <div class="options">${optionsHtml}</div>
+                    <button class="submit-btn" onclick="submitAnswer(${index}, this, '${question.a}', '${question.marks[0]}', '${question.marks[1]}')">Submit</button>
+                    <p id="result-${index}" class="hidden"></p>
+                </div>
+            `);
+        });
+    }
+
+    window.submitAnswer = function(questionIndex, elem, correctAnswer, correctMark, incorrectMark) {
+        let userAnswer = $(elem).text().charAt(0);
+        let resultElement = $(`#result-${questionIndex}`);
+        if (userAnswer === correctAnswer) {
+            resultElement.text('Correct!').removeClass('hidden').addClass('correct');
+            currentScore += parseInt(correctMark);
+        } else {
+            resultElement.text(`Incorrect! The correct answer was ${correctAnswer}.`).removeClass('hidden').addClass('incorrect');
+            currentScore += parseInt(incorrectMark);
+        }
+        $(elem).parent().find('button').prop('disabled', true);
+        $("#totalScore").text(currentScore);
+        if (questionIndex + 1 === quizData[$("#subjectSelect").val()].length) {
+            $("#scoreArea").show();
+        }
+    };
+});
+</script>
+
+</body>
+</html>
