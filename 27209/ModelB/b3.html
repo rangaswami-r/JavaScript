@@ -1,292 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EduApp Enhanced</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .sidebar { overflow-y: auto; }
-        .content-area { padding: 20px; }
-        .nav-item { cursor: pointer; }
-        .form-check-label { cursor: pointer; }
-        #chartContainer { width: 100%; height: 300px; }
-        @media (max-width: 768px) {
-            .sidebar { position: static; height: auto; }
-            .content-area { padding: 10px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Educational App with Quizzes</title>
+<style>
+    body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; }
+    .container { max-width: 1200px; margin: auto; }
+    .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .subject-card, .quiz-button { background: #fff; border: 1px solid #ddd; padding: 20px; text-align: center; cursor: pointer; transition: transform 0.3s; }
+    .subject-card:hover, .quiz-button:hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .lessons, .lesson-content, .quiz { margin-top: 20px; padding: 20px; background: #fff; }
+    .lesson-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .lesson-list li:hover { background: #f9f9f9; }
+    .hidden { display: none; }
+    .quiz-button { display: inline-block; margin: 10px 0; background-color: #4CAF50; color: white; }
+    #scoreboard { margin-top: 20px; background: #fff; padding: 20px; }
+    #scoreboard table { width: 100%; border-collapse: collapse; }
+    #scoreboard th, #scoreboard td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    #scoreboard th { background-color: #f2f2f2; }
+    .quiz-question { margin-bottom: 15px; }
+    .quiz-answer { margin-left: 20px; }
+    .submit-button { background-color: #5cb85c; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+    .submit-button:hover { background-color: #4cae4c; }
+</style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">EduApp Enhanced</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-</nav>
-
-<div class="container-fluid">
-    <div class="row">
-        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse navbar-collapse" id="sidebarMenu">
-            <div class="position-sticky pt-3">
-                <ul class="nav flex-column" id="subjectList">
-                    <li class="nav-item" data-subject="math">Mathematics</li>
-                    <li class="nav-item" data-subject="science">Science</li>
-                    <li class="nav-item" data-subject="history">History</li>
-                </ul>
-            </div>
-        </nav>
-
-        <main class="col-md-9 ml-sm-auto col-lg-10 px-md-4" role="main">
-            <div class="content-area" id="contentArea">
-                <!-- Dynamic content will be loaded here -->
-            </div>
-            <div id="chartContainer"></div>
-        </main>
+<div class="container">
+    <h1>Educational App with Quizzes</h1>
+    <div id="subjects" class="subjects-grid"></div>
+    <div id="lessons" class="lessons hidden"></div>
+    <div id="lessonContent" class="lesson-content hidden"></div>
+    <div id="quizSection" class="quiz hidden"></div>
+    <div id="scoreboard" class="hidden">
+        <h2>Scoreboard</h2>
+        <table>
+            <thead><tr><th>Subject</th><th>Score</th></tr></thead>
+            <tbody id="scoreboardBody"></tbody>
+        </table>
     </div>
 </div>
 
-<!-- Quiz Modal -->
-<div class="modal fade" id="quizModal" tabindex="-1" aria-labelledby="quizModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="quizModalLabel">Quiz</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="quizContent">
-                <!-- Quiz content will be dynamically loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="submitQuiz()">Submit</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Incorrect Answers Modal -->
-<div class="modal fade" id="incorrectAnswersModal" tabindex="-1" aria-labelledby="incorrectAnswersModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="incorrectAnswersModalLabel">Incorrect Answers</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="incorrectAnswersContent">
-                <!-- Incorrect answers with explanations will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const subjectList = document.getElementById('subjectList');
-    const contentArea = document.getElementById('contentArea');
-    const chartContainer = document.getElementById('chartContainer');
-    const quizModal = new bootstrap.Modal(document.getElementById('quizModal'));
-    const incorrectAnswersModal = new bootstrap.Modal(document.getElementById('incorrectAnswersModal'));
-    const userProgress = JSON.parse(localStorage.getItem('userProgress')) || {};
-    let currentSubject = 'math';
-    let incorrectAnswers = [];
+    const subjects = [
+        {name: "Math", lessons: ["Algebra", "Geometry", "Calculus"]},
+        {name: "Science", lessons: ["Physics", "Chemistry", "Biology"]},
+        {name: "History", lessons: ["Ancient History", "Modern History"]},
+        {name: "English", lessons: ["Grammar", "Literature"]}
+    ];
 
-    function updateProgress(subject, score, incorrect) {
-        userProgress[subject] = userProgress[subject] || {total: 0, correct: 0, incorrect: []};
-        userProgress[subject].total++;
-        userProgress[subject].correct += score;
-        userProgress[subject].incorrect.push(...incorrect);
-        localStorage.setItem('userProgress', JSON.stringify(userProgress));
-        displayProgress();
-    }
-
-    function displayProgress() {
-        const labels = Object.keys(userProgress);
-        const correctData = labels.map(subject => userProgress[subject].correct);
-        const totalData = labels.map(subject => userProgress[subject].total);
-        const incorrectData = labels.map(subject => userProgress[subject].incorrect.length);
-
-        const ctx = document.createElement('canvas');
-        chartContainer.innerHTML = '';
-        chartContainer.appendChild(ctx);
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Correct',
-                    data: correctData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }, {
-                    label: 'Total',
-                    data: totalData,
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }, {
-                    label: 'Incorrect',
-                    data: incorrectData,
-                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
-                    borderColor: 'rgba(255, 205, 86, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-
-    subjectList.addEventListener('click', function(e) {
-        if(e.target.tagName === 'LI') {
-            currentSubject = e.target.getAttribute('data-subject');
-            loadSubject(currentSubject);
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            e.target.classList.add('active');
-        }
-    });
-
-    function loadSubject(subject) {
-        let content = '';
-        switch(subject) {
-            case 'math':
-                content = `<h2>Mathematics</h2>
-                           <p>Lesson on Algebra...</p>
-                           <button onclick="startQuiz('math')" class="btn btn-primary">Start Math Quiz</button>
-                           <a href="#" download="math_test.pdf" class="btn btn-secondary mt-2">Download Test Paper</a>`;
-                break;
-            case 'science':
-                content = `<h2>Science</h2>
-                           <p>Lesson on Physics...</p>
-                           <button onclick="startQuiz('science')" class="btn btn-primary">Start Science Quiz</button>
-                           <a href="#" download="science_test.pdf" class="btn btn-secondary mt-2">Download Test Paper</a>`;
-                break;
-            case 'history':
-                content = `<h2>History</2>
-                           <p>Lesson on World War II...</p>
-                           <button onclick="startQuiz('history')" class="btn btn-primary">Start History Quiz</button>
-                           <a href="#" download="history_test.pdf" class="btn btn-secondary mt-2">Download Test Paper</a>`;
-                break;
-        }
-        contentArea.innerHTML = content;
-        displayProgress();
-    }
-
-    window.startQuiz = function(subject) {
-        const questions = getQuizQuestions(subject);
-        const quizHtml = generateQuizHtml(questions);
-        document.getElementById('quizContent').innerHTML = quizHtml;
-        quizModal.show();
+    const quizzes = {
+        "Algebra": [
+            {question: "What is x if 2x + 3 = 11?", answers: ["3", "4", "5"], correct: "1"},
+            {question: "Solve for y: y - 5 = 10", answers: ["10", "15", "5"], correct: "1"}
+        ],
+        "Physics": [
+            {question: "What is the unit of force?", answers: ["Joule", "Watt", "Newton"], correct: "2"},
+            {question: "Which law states that every action has an equal and opposite reaction?", answers: ["Newton's First Law", "Newton's Second Law", "Newton's Third Law"], correct: "2"}
+        ],
+        // Add more questions for other subjects
     };
 
-    window.submitQuiz = function() {
-        const form = document.getElementById('quizForm');
-        const answers = getQuizAnswers(currentSubject);
-        let score = 0;
-        incorrectAnswers = [];
+    let scores = JSON.parse(localStorage.getItem('quizScores')) || {};
 
-        Array.from(form.elements).forEach((element, index) => {
-            if (element.type === 'radio' && element.checked) {
-                const questionIndex = parseInt(element.name.replace('question', ''));
-                if (element.value !== answers[questionIndex]) {
-                    incorrectAnswers.push({question: getQuizQuestions(currentSubject)[questionIndex].q, correctAnswer: answers[questionIndex]});
-                } else {
-                    score++;
-                }
-            }
-        });
-
-        updateProgress(currentSubject, score, incorrectAnswers);
-        alert(`You scored ${score} out of ${answers.length}.`);
-        quizModal.hide();
-
-        if (incorrectAnswers.length > 0) {
-            showIncorrectAnswers();
+    function updateScoreboard() {
+        const scoreboardBody = document.getElementById('scoreboardBody');
+        scoreboardBody.innerHTML = '';
+        for(let subject in scores) {
+            scoreboardBody.innerHTML += `<tr><td>${subject}</td><td>${scores[subject]}</td></tr>`;
         }
-    };
+        document.getElementById('scoreboard').classList.remove('hidden');
+    }
 
-    function showIncorrectAnswers() {
-        let html = '<ul>';
-        incorrectAnswers.forEach(incorrect => {
-            html += `<li>${incorrect.question} Correct answer: ${incorrect.correctAnswer}</li>`;
+    document.getElementById('subjects').innerHTML = subjects.map(subject =>
+        `<div class="subject-card" onclick="showLessons('${subject.name}')">${subject.name}</div>`
+    ).join('');
+
+    function showLessons(subjectName) {
+        const subject = subjects.find(sub => sub.name === subjectName);
+        document.getElementById('lessons').innerHTML = `<h2>${subjectName}</h2>
+        <ul class="lesson-list">
+        ${subject.lessons.map(lesson => `<li onclick="showContent('${lesson}')">${lesson} <button class="quiz-button" onclick="event.stopPropagation(); startQuiz('${lesson}')">Quiz</button></li>`).join('')}
+        </ul>`;
+        document.getElementById('lessons').classList.remove('hidden');
+        document.getElementById('lessonContent').classList.add('hidden');
+        document.getElementById('quizSection').classList.add('hidden');
+    }
+
+    function showContent(lessonName) {
+        document.getElementById('lessonContent').innerHTML = `<h2>${lessonName}</h2><p>Content for ${lessonName}.</p>`;
+        document.getElementById('lessonContent').classList.remove('hidden');
+    }
+
+    function startQuiz(lessonName) {
+        const quizQuestions = quizzes[lessonName] || [];
+        let html = `<h2>${lessonName} Quiz</h2>`;
+        quizQuestions.forEach((q, index) => {
+            html += `<div class="quiz-question">${index + 1}. ${q.question}<br>
+            ${q.answers.map((ans, ansIndex) => `<span class="quiz-answer"><input type="radio" name="question-${index}" value="${ansIndex}"> ${ans}</span>`).join('')}</div>`;
         });
-        html += '</ul>';
-
-        document.getElementById('incorrectAnswersContent').innerHTML = html;
-        incorrectAnswersModal.show();
+        html += '<button class="submit-button" onclick="submitQuiz(\'' + lessonName + '\')">Submit</button>';
+        document.getElementById('quizSection').innerHTML = html;
+        document.getElementById('quizSection').classList.remove('hidden');
     }
 
-    function getQuizQuestions(subject) {
-        const questions = {
-            math: [
-                { q: "What is 2 + 2?", a: "4" },
-                { q: "Is 5 an odd number?", a: "True" }
-            ],
-            science: [
-                { q: "What is the formula for water?", a: "H2O" },
-                { q: "Is Earth flat?", a: "False" }
-            ],
-            history: [
-                { q: "When did World War II end?", a: "1945" },
-                { q: "Was Cleopatra a pharaoh of Ancient Egypt?", a: "True" }
-            ]
-        };
-        return questions[subject];
-    }
-
-    function getQuizAnswers(subject) {
-        return getQuizQuestions(subject).map(q => q.a);
-    }
-
-    function generateQuizHtml(questions) {
-        let html = '<form id="quizForm">';
-        questions.forEach((question, index) => {
-            const optionsHtml = ['True', 'False'].map(option => {
-                return `<div class="form-check">
-                            <input class="form-check-input" type="radio" name="question${index}" value="${option}" id="q${index}o${option}">
-                            <label class="form-check-label" for="q${index}o${option}">${option}</label>
-                        </div>`;
-            }).join('');
-
-            html += `<div class="form-group">
-                        <label>${index + 1}. ${question.q}</label>
-                        ${optionsHtml}
-                     </div>`;
+    function submitQuiz(lessonName) {
+        const userAnswers = Array.from(document.querySelectorAll(`input[type="radio"]:checked`)).map(input => input.value);
+        const correctAnswers = quizzes[lessonName].map(q => q.correct);
+        let correctCount = 0;
+        userAnswers.forEach((answer, index) => {
+            if(answer === correctAnswers[index]) correctCount++;
         });
-        html += '</form>';
-        return html;
+
+        if (!scores[lessonName]) scores[lessonName] = 0;
+        scores[lessonName] += correctCount;
+        localStorage.setItem('quizScores', JSON.stringify(scores));
+        updateScoreboard();
+        document.getElementById('quizSection').classList.add('hidden');
+        alert(`You scored ${correctCount} out of ${quizzes[lessonName].length} in ${lessonName}.`);
     }
 
-    // Daily practice reminders setup (this would ideally integrate with a backend or use local notifications)
-    function setupDailyReminder() {
-        // For demo purposes, just alert a message
-        alert('Daily reminder set! (This is a placeholder for actual reminder functionality)');
-    }
-    setupDailyReminder();
-
-    // Initial load
-    loadSubject('math');
-});
+    updateScoreboard();
 </script>
 
 </body>

@@ -1,87 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOS Game</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-        }
-        .game-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-gap: 5px;
-            justify-content: center;
-        }
-        .cell {
-            background-color: #eee;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100px;
-            cursor: pointer;
-            font-size: 24px;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Tic-Tac-Toe with Auto-Remove</title>
+<style>
+  #board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-gap: 5px;
+    width: 315px;
+    margin: 50px auto;
+  }
+  .cell {
+    width: 100px;
+    height: 100px;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    cursor: pointer;
+  }
+  .cell:hover {
+    background: #ddd;
+  }
+  .winner {
+    background: #aaffaa;
+  }
+  #status {
+    text-align: center;
+    font-size: 1.5em;
+  }
+</style>
 </head>
 <body>
-    <h1>SOS Game</h1>
-    <div class="game-grid">
-        <!-- Cells will be generated dynamically -->
-    </div>
-    <p id="game-status">Player S's turn</p>
 
-    <script>
-        const gameGrid = document.querySelector('.game-grid');
-        const gameStatus = document.getElementById('game-status');
-        const gameBoard = [];
-        let currentPlayer = 'S';
+<div id="status">Player X's Turn</div>
+<div id="board">
+  <div class="cell" data-index="0"></div>
+  <div class="cell" data-index="1"></div>
+  <div class="cell" data-index="2"></div>
+  <div class="cell" data-index="3"></div>
+  <div class="cell" data-index="4"></div>
+  <div class="cell" data-index="5"></div>
+  <div class="cell" data-index="6"></div>
+  <div class="cell" data-index="7"></div>
+  <div class="cell" data-index="8"></div>
+</div>
 
-        // Initialize the game board
-        for(let i = 0; i < 9; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.dataset.index = i;
-            gameGrid.appendChild(cell);
-            gameBoard.push('');
-            cell.addEventListener('click', handleCellClick);
-        }
+<script>
+  const cells = document.querySelectorAll('.cell');
+  let currentPlayer = 'X';
+  let moves = { 'X': [], 'O': [] };
+  const winPatterns = [
+    [0,1,2], [3,4,5], [6,7,8], // rows
+    [0,3,6], [1,4,7], [2,5,8], // columns
+    [0,4,8], [2,4,6]           // diagonals
+  ];
 
-        function handleCellClick(e) {
-            const index = e.target.dataset.index;
-            if (gameBoard[index] === '' && !checkWinner()) {
-                gameBoard[index] = currentPlayer;
-                e.target.textContent = currentPlayer;
-                if (checkWinner()) {
-                    gameStatus.textContent = `Player ${currentPlayer} wins!`;
-                    setTimeout(() => alert(`Player ${currentPlayer} wins!`), 10);
-                } else if (!gameBoard.includes('')) {
-                    gameStatus.textContent = 'It\'s a draw!';
-                    setTimeout(() => alert('It\'s a draw!'), 10);
-                } else {
-                    currentPlayer = currentPlayer === 'S' ? 'O' : 'S';
-                    gameStatus.textContent = `Player ${currentPlayer}'s turn`;
-                }
-            }
-        }
+  function checkWinner(board) {
+    for (let pattern of winPatterns) {
+      const [a, b, c] = pattern;
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return board[a];
+      }
+    }
+    return null;
+  }
 
-        function checkWinner() {
-            const winConditions = [
-                [0, 1, 2],
-                [3, 4, 5],
-                [6, 7, 8],
-                [0, 3, 6],
-                [1, 4, 7],
-                [2, 5, 8],
-                [0, 4, 8],
-                [2, 4, 6]
-            ];
-            return winConditions.some(condition => {
-                return condition.every(index => gameBoard[index] === currentPlayer);
-            });
-        }
-    </script>
+  function makeMove(cell, index) {
+    if (!cell.textContent) {
+      cell.textContent = currentPlayer;
+      moves[currentPlayer].push(index);
+
+      if (checkWinner([...cells].map(c => c.textContent))) {
+        document.getElementById('status').textContent = `Player ${currentPlayer} wins!`;
+        cells.forEach(c => c.onclick = null);
+        return;
+      }
+
+      if (moves[currentPlayer].length > 2) {
+        let oldestMove = moves[currentPlayer].shift();
+        cells[oldestMove].textContent = '';
+      }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      document.getElementById('status').textContent = `Player ${currentPlayer}'s Turn`;
+    }
+  }
+
+  cells.forEach((cell, index) => {
+    cell.onclick = () => makeMove(cell, index);
+  });
+</script>
+
 </body>
 </html>

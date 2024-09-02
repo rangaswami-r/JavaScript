@@ -1,198 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>EduApp Enhanced</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: 'Arial', sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-        .navbar { background-color: #007bff; }
-        .navbar-brand { color: white; }
-        .sidebar { background-color: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
-        .nav-item { padding: 10px; border-bottom: 1px solid #eee; }
-        .nav-item:hover { background-color: #f8f9fa; cursor: pointer; }
-        .content-area { padding: 20px; background: #fff; margin: 10px; border-radius: 8px; }
-        .quiz-option { margin: 10px 0; }
-        .form-check-label { padding-left: 5px; }
-        .explanation { background: #e9ecef; padding: 10px; margin-top: 10px; border-left: 3px solid #007bff; display: none; }
-        #progressChart { width: 100%; max-width: 600px; margin: 20px auto; }
-        @media (max-width: 768px) {
-            .sidebar { height: auto; }
-            .content-area { margin: 0; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Educational App with Improved Quizzes</title>
+<style>
+    body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; }
+    .container { max-width: 1200px; margin: auto; }
+    .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .subject-card, .quiz-button { background: #fff; border: 1px solid #ddd; padding: 20px; text-align: center; cursor: pointer; transition: transform 0.3s; }
+    .subject-card:hover, .quiz-button:hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .lessons, .lesson-content, .quiz { margin-top: 20px; padding: 20px; background: #fff; }
+    .lesson-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .lesson-list li:hover { background: #f9f9f9; }
+    .hidden { display: none; }
+    .quiz-button { display: inline-block; margin: 10px 0; background-color: #4CAF50; color: white; }
+    .quiz .question { margin: 20px 0; }
+    .quiz .answer { margin: 10px 0; padding: 10px; background: #f9f9f9; border-left: 4px solid #4CAF50; cursor: pointer; }
+    .quiz .answer:hover { background: #eee; }
+    .quiz .submit-quiz { background-color: #008CBA; color: white; border: none; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; }
+    #scoreboard { margin-top: 20px; background: #fff; padding: 20px; }
+    #scoreboard table { width: 100%; border-collapse: collapse; }
+    #scoreboard th, #scoreboard td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    #scoreboard th { background-color: #f2f2f2; }
+</style>
 </head>
 <body>
 
-<nav class="navbar navbar-light">
-    <a class="navbar-brand" href="#">EduApp</a>
-</nav>
-
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3 col-lg-2 sidebar" id="sidebarMenu">
-            <ul class="nav flex-column" id="subjectList"></ul>
-        </div>
-
-        <main class="col-md-9 col-lg-10" role="main">
-            <div class="content-area" id="contentArea"></div>
-            <div id="progressChart"></div>
-        </main>
-    </div>
-</div>
-
-<div class="modal fade" id="quizModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Quiz</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="quizContent"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="submitQuiz">Submit</button>
-            </div>
-        </div>
+<div class="container">
+    <h1>Educational App with Quizzes</h1>
+    <div id="subjects" class="subjects-grid"></div>
+    <div id="lessons" class="lessons hidden"></div>
+    <div id="lessonContent" class="lesson-content hidden"></div>
+    <div id="quizSection" class="quiz hidden"></div>
+    <div id="scoreboard" class="hidden">
+        <h2>Scoreboard</h2>
+        <table>
+            <thead><tr><th>Subject</th><th>Score</th></tr></thead>
+            <tbody id="scoreboardBody"></tbody>
+        </table>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const subjectList = document.getElementById('subjectList');
-    const contentArea = document.getElementById('contentArea');
-    const quizModal = new bootstrap.Modal(document.getElementById('quizModal'));
-    const submitQuizBtn = document.getElementById('submitQuiz');
-    let currentSubject = 'math';
-    const userProgress = JSON.parse(localStorage.getItem('userProgress')) || {};
+    const subjects = [
+        {name: "Math", lessons: ["Algebra", "Geometry"]},
+        {name: "Science", lessons: ["Physics", "Chemistry"]},
+    ];
 
-    // Function to load subjects
-    const subjects = ['math', 'science', 'history'];
-    subjects.forEach(subject => {
-        let li = document.createElement('li');
-        li.className = 'nav-item';
-        li.setAttribute('data-subject', subject);
-        li.textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
-        li.onclick = () => loadSubject(subject);
-        subjectList.appendChild(li);
-    });
-
-    function loadSubject(subject) {
-        currentSubject = subject;
-        contentArea.innerHTML = `<h2>${subject.charAt(0).toUpperCase() + subject.slice(1)}</h2>
-        <p>Content for ${subject} goes here.</p>
-        <button class="btn btn-primary" onclick="startQuiz('${subject}')">Start Quiz</button>`;
-        updateProgressChart();
-    }
-
-    // Quiz functionality
     const quizzes = {
-        'math': [
-            {q: "2 + 2 equals?", a: "4", options: ["3", "4", "5"], explanation: "2 + 2 is the basic addition."},
-            // Add more questions here
+        "Algebra": [
+            {q: "What is 2 + 2?", options: ["3", "4", "5"], correct: 1},
+            {q: "Solve for x: 3x - 7 = 20", options: ["6", "9", "7"], correct: 2}
         ],
-        // Define quizzes for science and history similarly
+        "Geometry": [
+            {q: "What is the area of a circle with radius 3?", options: ["9π", "6π", "27π"], correct: 0},
+            {q: "How many sides does a hexagon have?", options: ["5", "6", "7"], correct: 1}
+        ],
+        // Add more subjects and questions similarly
     };
 
-    function startQuiz(subject) {
-        let quizHTML = '<form id="quizForm">';
-        quizzes[subject].forEach((question, index) => {
-            quizHTML += `<div><strong>Q${index + 1}:</strong> ${question.q}<br>`;
-            question.options.forEach(option => {
-                quizHTML += `<div class="quiz-option">
-                    <input type="radio" id="q${index}${option}" name="question${index}" value="${option}">
-                    <label for="q${index}${option}">${option}</label>
-                </div>`;
-            });
-            quizHTML += `<div class="explanation" id="exp${index}"></div></div>`;
-        });
-        quizHTML += '</form>';
-        document.getElementById('quizContent').innerHTML = quizHTML;
-        quizModal.show();
+    let scores = JSON.parse(localStorage.getItem('quizScores')) || {};
+    let currentQuiz = [];
+    let userAnswers = {};
+
+    function updateScoreboard() {
+        const scoreboardBody = document.getElementById('scoreboardBody');
+        scoreboardBody.innerHTML = '';
+        for(let subject in scores) {
+            scoreboardBody.innerHTML += `<tr><td>${subject}</td><td>${scores[subject]}</td></tr>`;
+        }
+        document.getElementById('scoreboard').classList.remove('hidden');
     }
 
-    submitQuizBtn.onclick = function() {
-        const form = document.getElementById('quizForm');
-        let score = 0;
-        quizzes[currentSubject].forEach((question, index) => {
-            const selected = form.elements[`question${index}`].value;
-            const explanationDiv = document.getElementById(`exp${index}`);
-            if (selected === question.a) {
-                score++;
-            } else {
-                explanationDiv.style.display = 'block';
-                explanationDiv.innerHTML = `<strong>Explanation:</strong> ${question.explanation}`;
-            }
-        });
-        alert(`Your score: ${score} out of ${quizzes[currentSubject].length}`);
-        updateProgress(currentSubject, score, quizzes[currentSubject].length);
-        quizModal.hide();
-    };
-
-    function updateProgress(subject, score, total) {
-        if (!userProgress[subject]) userProgress[subject] = {correct: 0, total: 0};
-        userProgress[subject].correct += score;
-        userProgress[subject].total += total;
-        localStorage.setItem('userProgress', JSON.stringify(userProgress));
-        updateProgressChart();
+    function showLessons(subjectName) {
+        const subject = subjects.find(sub => sub.name === subjectName);
+        document.getElementById('lessons').innerHTML = `<h2>${subjectName}</h2>
+        <ul class="lesson-list">
+        ${subject.lessons.map(lesson => `<li onclick="showContent('${lesson}')">${lesson} <button class="quiz-button" onclick="event.stopPropagation(); startQuiz('${lesson}')">Quiz</button></li>`).join('')}
+        </ul>`;
+        document.getElementById('lessons').classList.remove('hidden');
     }
 
-    function updateProgressChart() {
-        const ctx = document.createElement('canvas');
-        document.getElementById('progressChart').innerHTML = '';
-        document.getElementById('progressChart').appendChild(ctx);
-
-        const chartData = {
-            labels: subjects,
-            datasets: [{
-                label: 'Performance',
-                data: subjects.map(sub => {
-                    return userProgress[sub] ? (userProgress[sub].correct / userProgress[sub].total) * 100 : 0;
-                }),
-                backgroundColor: 'rgba(0, 123, 255, 0.5)',
-            }]
-        };
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: chartData,
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
-            }
-        });
-    }
-
-    // Daily reminder functionality - this is a basic example
-    function setDailyReminder() {
-        if ('Notification' in window) {
-            if (Notification.permission === 'granted') {
-                new Notification('EduApp Reminder', { body: 'Time for your daily practice!' });
-            } else if (Notification.permission !== 'denied') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        setDailyReminder();
-                    }
-                });
-            }
+    function startQuiz(lessonName) {
+        currentQuiz = quizzes[lessonName] || [];
+        userAnswers = {};
+        if(currentQuiz.length) {
+            renderQuiz();
+        } else {
+            alert('No quiz available for this lesson.');
         }
     }
 
-    // Call this function at a specific time daily or when the user sets it up
-    // For demonstration, we'll set it to run once when the page loads
-    setDailyReminder();
+    function renderQuiz() {
+        let html = `<h2>${currentQuiz[0].q.split(' ')[0]} Quiz</h2>`;
+        currentQuiz.forEach((question, index) => {
+            html += `<div class="question"><p>${index + 1}. ${question.q}</p>
+            ${question.options.map((option, optIndex) => `<div class="answer" onclick="selectAnswer(${index}, ${optIndex})">${String.fromCharCode(65 + optIndex)}) ${option}</div>`).join('')}</div>`;
+        });
+        html += '<button class="submit-quiz" onclick="submitQuiz()">Submit Quiz</button>';
+        document.getElementById('quizSection').innerHTML = html;
+        document.getElementById('quizSection').classList.remove('hidden');
+    }
 
-    // Initial load
-    loadSubject('math');
-});
+    function selectAnswer(questionIndex, optionIndex) {
+        userAnswers[questionIndex] = optionIndex;
+        // Optionally, give visual feedback for selected answer
+    }
+
+    function submitQuiz() {
+        let correctAnswers = 0;
+        currentQuiz.forEach((question, index) => {
+            if(userAnswers[index] === question.correct) {
+                correctAnswers++;
+            }
+        });
+        const lessonName = currentQuiz[0].q.split(' ')[0]; // Assuming lesson name is part of the question
+        if (!scores[lessonName]) scores[lessonName] = 0;
+        scores[lessonName] += correctAnswers;
+        localStorage.setItem('quizScores', JSON.stringify(scores));
+        alert(`You got ${correctAnswers} out of ${currentQuiz.length} correct!`);
+        updateScoreboard();
+        document.getElementById('quizSection').classList.add('hidden');
+    }
+
+    document.getElementById('subjects').innerHTML = subjects.map(subject =>
+        `<div class="subject-card" onclick="showLessons('${subject.name}')">${subject.name}</div>`
+    ).join('');
+
+    updateScoreboard();
 </script>
 
 </body>

@@ -28,6 +28,10 @@
   .cell:hover {
     background: #ddd;
   }
+  .cell.disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
   .winner {
     background: #aaffaa;
   }
@@ -105,7 +109,7 @@
   }
 
   function makeMove(cell, index) {
-    if (!cell.textContent) {
+    if (!cell.textContent && !cell.classList.contains('disabled')) {
       cell.textContent = currentPlayer;
       moves[currentPlayer].push(index);
       history[currentPlayer].push(index);
@@ -114,6 +118,7 @@
       const winner = checkWinner([...cells].map(c => c.textContent));
       if (winner) {
         document.getElementById('status').textContent = `Player ${winner} wins!`;
+        disableAllCells();
         return;
       }
       if (moves.X.length + moves.O.length === boardSize * boardSize) {
@@ -139,6 +144,13 @@
       }
     }
     return null;
+  }
+
+  function disableAllCells() {
+    cells.forEach(cell => {
+      cell.classList.add('disabled');
+      cell.onclick = null;
+    });
   }
 </script>
 

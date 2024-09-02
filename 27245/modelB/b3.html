@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Advanced Tic-Tac-Toe</title>
+<title>Enhanced Tic-Tac-Toe</title>
 <style>
   #game-container {
     width: 100%;
@@ -28,6 +28,10 @@
   .cell:hover {
     background: #ddd;
   }
+  .cell.disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
   .winner {
     background: #aaffaa;
   }
@@ -38,24 +42,42 @@
   #history > div {
     margin-bottom: 5px;
   }
-  #board-size {
+  #board-size, #player-names {
     margin-top: 20px;
   }
-  #board-size > button {
+  #board-size > button, #player-names > button {
     margin: 5px;
+  }
+  .power-up {
+    font-size: 1em;
+    margin: 5px;
+    cursor: pointer;
+  }
+  .power-up.disabled {
+    color: #aaa;
+    cursor: default;
   }
 </style>
 </head>
 <body>
 
 <div id="game-container">
-  <div id="status">Select board size to start the game.</div>
+  <div id="player-names">
+    <input type="text" id="player-x" placeholder="Player X's name">
+    <input type="text" id="player-o" placeholder="Player O's name">
+    <button onclick="setPlayerNames()">Start Game</button>
+  </div>
+  <div id="status">Enter player names to start the game.</div>
   <div id="board-size">
     <button onclick="initGame(3)">3x3</button>
     <button onclick="initGame(4)">4x4</button>
     <button onclick="initGame(5)">5x5</button>
   </div>
   <div id="board"></div>
+  <div id="power-ups">
+    <span class="power-up" onclick="undoMove()">Undo Move</span>
+    <span class="power-up" onclick="swapTurns()">Swap Turns</span>
+  </div>
   <div id="history">
     <div>Player X's last move: <span id="x-last-move">-</span></div>
     <div>Player O's last move: <span id="o-last-move">-</span></div>
@@ -69,10 +91,19 @@
   let history = { 'X': [], 'O': [] };
   let winPatterns;
   let cells;
+  let playerNames = { 'X': 'Player X', 'O': 'Player O' };
+  let powerUps = { 'X': 1, 'O': 1 };
+  let canUsePowerUp = true;
+
+  function setPlayerNames() {
+    playerNames.X = document.getElementById('player-x').value || 'Player X';
+    playerNames.O = document.getElementById('player-o').value || 'Player O';
+    document.getElementById('player-names').style.display = 'none';
+    document.getElementById('status').textContent = 'Select board size to start the game.';
+  }
 
   function initGame(size) {
     boardSize = size;
-    document.getElementById('board-size').style.display = 'none';
     const board = document.getElementById('board');
     board.style.gridTemplateColumns = `repeat(${size}, 100px)`;
     board.innerHTML = '';
@@ -87,17 +118,16 @@
     cells.forEach((cell, index) => {
       cell.onclick = () => makeMove(cell, index);
     });
+    updateStatus();
   }
 
   function generateWinPatterns(size) {
     const patterns = [];
-    // Rows and columns
     for (let i = 0; i < size; i++) {
       const row = Array.from({length: size}, (_, j) => i * size + j);
       const col = Array.from({length: size}, (_, j) => j * size + i);
       patterns.push(row, col);
     }
-    // Diagonals
     const diagonal1 = Array.from({length: size}, (_, i) => i * size + i);
     const diagonal2 = Array.from({length: size}, (_, i) => (size - 1 - i) * size + i);
     patterns.push(diagonal1, diagonal2);
@@ -105,19 +135,19 @@
   }
 
   function makeMove(cell, index) {
-    if (!cell.textContent) {
+    if (!cell.textContent && !cell.classList.contains('disabled') && canUsePowerUp) {
       cell.textContent = currentPlayer;
       moves[currentPlayer].push(index);
       history[currentPlayer].push(index);
-      document.getElementById(`${currentPlayer.toLowerCase()}-last-move`).textContent = index + 1;
+      updateLastMoveDisplay(currentPlayer, index + 1);
 
       const winner = checkWinner([...cells].map(c => c.textContent));
       if (winner) {
-        document.getElementById('status').textContent = `Player ${winner} wins!`;
+        announceWinner(winner);
         return;
       }
       if (moves.X.length + moves.O.length === boardSize * boardSize) {
-        document.getElementById('status').textContent = 'Game ends in a draw!';
+        announceDraw();
         return;
       }
 
@@ -127,8 +157,48 @@
       }
 
       currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-      document.getElementById('status').textContent = `Player ${currentPlayer}'s Turn`;
+      updateStatus();
+      updatePowerUps();
     }
+  }
+
+  function undoMove() {
+    if (canUsePowerUp && history[currentPlayer].length > 0) {
+      const lastMoveIndex = history[currentPlayer].pop();
+      cells[lastMoveIndex].textContent = '';
+      moves[currentPlayer].pop();
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      updateStatus();
+      updatePowerUps();
+    }
+  }
+
+  function swapTurns() {
+    if (canUsePowerUp) {
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      updateStatus();
+      updatePowerUps();
+    }
+  }
+
+  function updateStatus() {
+    document.getElementById('status').textContent = `${playerNames[currentPlayer]}'s Turn`;
+  }
+
+  function updateLastMoveDisplay(player, move) {
+    document.getElementById(`${player.toLowerCase()}-last-move`).textContent = move;
+  }
+
+  function updatePowerUps() {
+    const powerUpElements = document.querySelectorAll('.power-up');
+    powerUpElements.forEach((powerUp, index) => {
+      if (index < powerUps[currentPlayer]) {
+        powerUp.classList.remove('disabled');
+      } else {
+        powerUp.classList.add('disabled');
+      }
+    });
+    canUsePowerUp = powerUps[currentPlayer] > 0;
   }
 
   function checkWinner(board) {
@@ -139,6 +209,22 @@
       }
     }
     return null;
+  }
+
+  function announceWinner(winner) {
+    document.getElementById('status').textContent = `${playerNames[winner]} wins!`;
+    disableAllCells();
+  }
+
+  function announceDraw() {
+    document.getElementById('status').textContent = 'Game ends in a draw!';
+  }
+
+  function disableAllCells() {
+    cells.forEach(cell => {
+      cell.classList.add('disabled');
+      cell.onclick = null;
+    });
   }
 </script>
 
