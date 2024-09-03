@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Virtual Science Lab - Experiment Simulation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #lab-bench {
+            width: 80%;
+            background: #8B4513;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px #000000;
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .equipment {
+            font-size: 30px;
+            cursor: pointer;
+        }
+        #beaker {
+            font-size: 50px;
+            color: #007BFF;
+            transition: color 0.5s;
+        }
+        #experiment-controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input[type="number"] {
+            width: 50px;
+        }
+        #results-graph {
+            width: 300px;
+            height: 150px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="lab-bench">
+        <i class="equipment fas fa-flask" id="beaker"></i>
+    </div>
+    <div id="experiment-controls">
+        <label for="temperature">Temperature (°C):</label>
+        <input type="number" id="temperature" value="20">
+        <button onclick="runExperiment()">Run Experiment</button>
+    </div>
+    <div id="results-graph">
+        <canvas id="temperatureChart"></canvas>
+    </div>
+
+    <script>
+        const beaker = document.getElementById('beaker');
+        const temperatureInput = document.getElementById('temperature');
+        const ctx = document.getElementById('temperatureChart').getContext('2d');
+        let temperatureChart;
+        let dataPoints = [];
+
+        function runExperiment() {
+            const temperature = parseFloat(temperatureInput.value);
+            const color = getColorForTemperature(temperature);
+            beaker.style.color = color;
+            recordData(temperature, color);
+            updateGraph();
+        }
+
+        function getColorForTemperature(temp) {
+            if (temp < 30) return '#007BFF'; // Cold - Blue
+            if (temp < 70) return '#FFA500'; // Warm - Orange
+            return '#FF0000'; // Hot - Red
+        }
+
+        function recordData(temp, color) {
+            dataPoints.push({ temperature: temp, color: color });
+        }
+
+        function updateGraph() {
+            if (temperatureChart) {
+                temperatureChart.destroy();
+            }
+            temperatureChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dataPoints.map(point => point.temperature),
+                    datasets: [{
+                        label: 'Temperature',
+                        data: dataPoints.map(point => point.temperature),
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

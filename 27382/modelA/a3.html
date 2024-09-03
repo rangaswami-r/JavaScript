@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Science Lab</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #lab-bench {
+            width: 80%;
+            background: #8B4513;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .equipment {
+            font-size: 30px;
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .equipment:hover {
+            transform: scale(1.1);
+        }
+        #beaker, #microscope, #bunsen {
+            color: #333;
+            text-align: center;
+        }
+        .experiment-controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .experiment-controls input, .experiment-controls button {
+            margin: 5px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        #results-graph {
+            width: 300px;
+            height: 150px;
+            margin: 20px auto;
+        }
+        /* Basic animation for Bunsen burner */
+        @keyframes flame {
+            0% {transform: scaleY(0.5);}
+            100% {transform: scaleY(1);}
+        }
+        #bunsen .flame {
+            color: #FFA07A;
+            animation: flame 0.5s infinite alternate;
+        }
+    </style>
+</head>
+<body>
+    <div id="lab-bench">
+        <div id="beaker" class="equipment">
+            <i class="fas fa-flask"></i>
+            <p>Beaker</p>
+        </div>
+        <div id="microscope" class="equipment">
+            <i class="fas fa-microscope"></i>
+            <p>Microscope</p>
+        </div>
+        <div id="bunsen" class="equipment">
+            <i class="fas fa-burn"></i>
+            <i class="fas fa-fire flame" style="display: none;"></i>
+            <p>Bunsen burner</p>
+        </div>
+    </div>
+    <div class="experiment-controls">
+        <input type="number" id="temp-input" placeholder="Temperature (°C)">
+        <button onclick="startBunsenExperiment()">Light Bunsen</button>
+        <button onclick="runBeakerExperiment()">Heat Beaker</button>
+        <button onclick="useMicroscope()">Use Microscope</button>
+    </div>
+    <div id="results-graph">
+        <canvas id="tempChart"></canvas>
+    </div>
+
+    <script>
+        let tempChart;
+        const equipment = document.querySelectorAll('.equipment');
+        const bunsenFlame = document.querySelector('#bunsen .flame');
+        const tempInput = document.getElementById('temp-input');
+
+        function startBunsenExperiment() {
+            bunsenFlame.style.display = 'inline-block';
+        }
+
+        function runBeakerExperiment() {
+            const temp = parseFloat(tempInput.value);
+            if (isNaN(temp)) return;
+            // Simulate heating the beaker
+            document.getElementById('beaker').style.color = getColorForTemperature(temp);
+            updateGraph(temp);
+        }
+
+        function useMicroscope() {
+            alert('You are now observing a sample under the microscope.');
+        }
+
+        function getColorForTemperature(temp) {
+            if (temp < 30) return '#007BFF';
+            if (temp < 70) return '#FFA500';
+            return '#FF0000';
+        }
+
+        function updateGraph(temp) {
+            if (!tempChart) {
+                const ctx = document.getElementById('tempChart').getContext('2d');
+                tempChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [temp],
+                        datasets: [{
+                            label: 'Temperature',
+                            data: [temp],
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255,99,132,1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                tempChart.data.labels.push(temp);
+                tempChart.data.datasets[0].data.push(temp);
+                tempChart.update();
+            }
+        }
+    </script>
+</body>
+</html>
