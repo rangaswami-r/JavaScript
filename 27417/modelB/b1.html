@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Art Market Trends</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <style>
+        canvas { max-width: 600px; margin: 20px auto; }
+        .select { margin: 10px; }
+    </style>
+</head>
+<body>
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Digital Art Market Trends</h1>
+            <div class="field">
+                <label class="label">Select Year:</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="yearSelect" onchange="updateCharts()">
+                            <option value="2017">2017</option>
+                            <option value="2018">2018</option>
+                            <option value="2019">2019</option>
+                            <option value="2020">2020</option>
+                            <option value="2021">2021</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <canvas id="growthChart"></canvas>
+            <canvas id="marketShareChart"></canvas>
+            <canvas id="platformChart"></canvas>
+        </div>
+    </section>
+
+    <script>
+    const data = {
+        // This is a simplified data structure for demonstration
+        growth: {2017: 35, 2018: 40, 2019: 45, 2020: 50, 2021: 55},
+        marketShare: {2017: {digital: 10, traditional: 90}, 2020: {digital: 15, traditional: 85}},
+        platforms: {2020: {"SuperRare": 5, "Foundation": 4, "Others": 6}}
+    };
+
+    function updateCharts() {
+        let year = document.getElementById('yearSelect').value;
+        updateLineChart(year);
+        updatePieChart(year);
+        updateBubbleChart(year);
+    }
+
+    function updateLineChart(year) {
+        let ctx = document.getElementById('growthChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Object.keys(data.growth),
+                datasets: [{
+                    label: 'Digital Art Sales Growth (\%)',
+                    data: Object.values(data.growth),
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
+
+    function updatePieChart(year) {
+        let ctx = document.getElementById('marketShareChart').getContext('2d');
+        let yearData = data.marketShare[year] || data.marketShare[2020]; // Fallback to 2020 if year not found
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Digital', 'Traditional'],
+                datasets: [{
+                    data: [yearData.digital, yearData.traditional],
+                    backgroundColor: ['\#FF6384','\#36A2EB']
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
+
+    function updateBubbleChart(year) {
+        let ctx = document.getElementById('platformChart').getContext('2d');
+        let platformsData = data.platforms[year] || data.platforms[2020];
+        let bubbleData = Object.entries(platformsData).map(([label, value]) => ({x: Math.random(), y: Math.random(), r: value * 2}));
+        new Chart(ctx, {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: 'Market Share',
+                    data: bubbleData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                }]
+            },
+            options: {
+                scales: { x: { display: false }, y: { display: false }},
+                responsive: true
+            }
+        });
+    }
+
+    // Initial chart rendering
+    updateCharts();
+    </script>
+</body>
+</html>

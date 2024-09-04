@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Art Market Trends</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .chart-container { width: 80\%; margin: 40px auto; }
+        .controls { text-align: center; margin: 20px; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <label for="yearFilter">Filter by Year:</label>
+        <select id="yearFilter">
+            <option value="all">All Years</option>
+            <option value="2017">2017</option>
+            <option value="2020">2020</option>
+            <option value="2021">2021</option>
+        </select>
+    </div>
+    <div class="chart-container">
+        <canvas id="lineChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="pieChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="bubbleChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+    <script>
+        // Data for charts
+        const digitalGrowthData = {
+            labels: ['2017', '2018', '2019', '2020', '2021'],
+            datasets: [{
+                label: 'Digital Art Sales Growth (\%)',
+                data: [35, 30, 25, 15, 20],
+                borderColor: 'rgba(75, 192, 192, 1)',
+                fill: false
+            }]
+        };
+
+        const marketShareData = {
+            '2017': {digital: 10, traditional: 90},
+            '2020': {digital: 15, traditional: 85},
+            '2021': {digital: 18, traditional: 82}
+        };
+
+        const bubbleData = {
+            datasets: [{
+                label: 'Digital Art Platforms',
+                data: [
+                    {x: 1, y: 1, r: 10, name: 'SuperRare'},
+                    {x: 2, y: 2, r: 8, name: 'Foundation'},
+                    {x: 3, y: 3, r: 5, name: 'Simulated Platform'}
+                ],
+                backgroundColor: 'rgba(255, 99, 132, 0.6)'
+            }]
+        };
+
+        // Chart configurations
+        const lineCtx = document.getElementById('lineChart').getContext('2d');
+        const lineChart = new Chart(lineCtx, {
+            type: 'line',
+            data: digitalGrowthData,
+            options: {
+                scales: {
+                    yAxes: [{ticks: {beginAtZero: true}}]
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem) {
+                            return `Growth: \${tooltipItem.yLabel}\%`;
+                        }
+                    }
+                }
+            }
+        });
+
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        const pieChart = new Chart(pieCtx, {
+            type: 'pie',
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Market Share'
+                },
+                tooltips: {
+                    callbacks: {
+                        label: (tooltipItem, data) => {
+                            let dataset = data.datasets[tooltipItem.datasetIndex];
+                            let total = dataset.data.reduce((acc, current) => acc + current, 0);
+                            let currentValue = dataset.data[tooltipItem.index];
+                            let percentage = ((currentValue / total) * 100).toFixed(2);
+                            return `\${data.labels[tooltipItem.index]}: \${percentage}\%`;
+                        }
+                    }
+                }
+            }
+        });
+
+        const bubbleCtx = document.getElementById('bubbleChart').getContext('2d');
+        const bubbleChart = new Chart(bubbleCtx, {
+            type: 'bubble',
+            data: bubbleData,
+            options: {
+                scales: {
+                    xAxes: [{ticks: {min: 0, max: 4, stepSize: 1}}],
+                    yAxes: [{ticks: {min: 0, max: 4, stepSize: 1}}]
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(t, d) {
+                            return d.datasets[t.datasetIndex].data[t.index].name + ': Market Share';
+                        }
+                    }
+                }
+            }
+        });
+
+        // Update pie chart based on year filter
+        document.getElementById('yearFilter').onchange = function() {
+            let year = this.value === 'all' ? '2020' : this.value; // Default to 2020 if 'all'
+            pieChart.data.labels = ['Digital', 'Traditional'];
+            pieChart.data.datasets[0] = {
+                data: [marketShareData[year].digital, marketShareData[year].traditional],
+                backgroundColor: ['\#FF6384', '\#36A2EB']
+            };
+            pieChart.update();
+        };
+
+        // Initial update to set the pie chart
+        document.getElementById('yearFilter').onchange(null);
+    </script>
+</body>
+</html>
