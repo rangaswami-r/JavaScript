@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virtual Science Lab</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.lab-bench {
+    width: 800px;
+    height: 400px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.equipment {
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    cursor: move;
+}
+
+#beaker { background: url('data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 40V10H10V40H40Z" fill="white" stroke="black" stroke-width="2"/></svg>') no-repeat; }
+#flask { background: url('data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25 5C15 5 10 15 10 25V40H40V25C40 15 35 5 25 5Z" fill="white" stroke="black" stroke-width="2"/></svg>') no-repeat; }
+#testTube { background: url('data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 40V10H10V40H40Z" fill="none" stroke="black" stroke-width="2"/><path d="M15 10L15 40" stroke="black" stroke-width="2"/><path d="M35 10L35 40" stroke="black" stroke-width="2"/></svg>') no-repeat; }
+
+.experiment-area {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    width: 200px;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+#graph {
+    width: 100%;
+    height: 100px;
+    background: #fff;
+    border: 1px solid #000;
+    margin-top: 10px;
+}
+</style>
+</head>
+<body>
+<div class="lab-bench">
+    <div id="beaker" class="equipment" style="left: 50px; top: 50px;"></div>
+    <div id="flask" class="equipment" style="left: 150px; top: 50px;"></div>
+    <div id="testTube" class="equipment" style="left: 250px; top: 50px;"></div>
+    <div class="experiment-area">
+        <button onclick="startExperiment()">Start Experiment</button>
+        <div id="experimentResult"></div>
+        <div id="graph"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script>
+let currentDraggable = null;
+
+document.querySelectorAll('.equipment').forEach(item => {
+    item.addEventListener('mousedown', function(event) {
+        currentDraggable = this;
+        event.preventDefault();
+    });
+});
+
+document.addEventListener('mousemove', function(event) {
+    if (currentDraggable) {
+        currentDraggable.style.left = (event.clientX - 25) + 'px';
+        currentDraggable.style.top = (event.clientY - 25) + 'px';
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    currentDraggable = null;
+});
+
+function startExperiment() {
+    // Here you would typically check which equipment is used, simulate an experiment,
+    // and then display results. For simplicity, we'll simulate random data.
+    const temp = Math.floor(Math.random() * 100);
+    const ph = (Math.random() * 14).toFixed(2);
+
+    document.getElementById('experimentResult').innerText = `Temperature: ${temp}°C, pH: ${ph}`;
+
+    // Simple graph generation
+    const ctx = document.getElementById('graph').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Start', 'End'],
+            datasets: [{
+                label: 'Temperature',
+                data: [0, temp],
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>

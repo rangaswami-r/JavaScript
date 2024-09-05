@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Science Lab</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #lab-bench {
+            background: #8B4513;
+            height: 200px;
+            border-radius: 10px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .equipment {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            cursor: move;
+        }
+
+        #beaker { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 90 L80 90 L70 30 L30 30 Z" fill="rgba(200,200,255,0.5)"/></svg>') no-repeat; }
+        #flask { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 10 L50 70 Q50 80 40 90 L60 90 Q50 80 50 70 Z" fill="rgba(255,255,200,0.5)"/></svg>') no-repeat; }
+        #test-tube { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30 90 L70 90 L60 20 L40 20 Z" fill="rgba(255,200,200,0.5)"/></svg>') no-repeat; }
+
+        .simulation-area {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            min-height: 300px;
+            margin: 20px 0;
+            padding: 10px;
+        }
+
+        .graph {
+            width: 100%;
+            height: 200px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Virtual Science Lab</h1>
+    <div id="lab-bench">
+        <div id="beaker" class="equipment" draggable="true"></div>
+        <div id="flask" class="equipment" draggable="true"></div>
+        <div id="test-tube" class="equipment" draggable="true"></div>
+    </div>
+
+    <div class="simulation-area" id="simulationArea">
+        <h3>Experiment Simulation</h3>
+        <div id="experimentResult"></div>
+        <button id="startExperiment" class="btn btn-primary">Start Experiment</button>
+    </div>
+
+    <div class="data-tool">
+        <h3>Data Collection</h3>
+        <div id="graph" class="graph"></div>
+        <textarea id="observations" placeholder="Record your observations here..." class="form-control"></textarea>
+    </div>
+</div>
+
+<script>
+    // Drag and Drop functionality
+    function dragStart(e) {
+        e.dataTransfer.setData("text/plain", e.target.id);
+    }
+
+    document.querySelectorAll('.equipment').forEach(item => {
+        item.addEventListener('dragstart', dragStart);
+    });
+
+    document.getElementById('lab-bench').addEventListener('dragover', e => e.preventDefault());
+    document.getElementById('lab-bench').addEventListener('drop', function(e) {
+        e.preventDefault();
+        const id = e.dataTransfer.getData("text");
+        const draggableElement = document.getElementById(id);
+        this.appendChild(draggableElement);
+    });
+
+    // Experiment Simulation
+    document.getElementById('startExperiment').addEventListener('click', function() {
+        const area = document.getElementById('simulationArea');
+        let result = `<p>Mixing chemicals...</p>`;
+        // Animation for experiment
+        result += `<div style="width: 50px; height: 50px; background-color: blue; animation: mix 2s linear;"></div>`;
+        area.innerHTML = result;
+
+        setTimeout(() => {
+            area.innerHTML += `<p>Reaction complete. Color changed to green!</p>`;
+            document.querySelector('.simulation-area div').style.backgroundColor = 'green';
+        }, 2000);
+    });
+
+    // Simple graph generation (placeholder)
+    function generateGraph(data) {
+        // This would typically involve a library like Chart.js for a real graph
+        document.getElementById('graph').innerText = "Graph would be displayed here with data: " + JSON.stringify(data);
+    }
+
+    // Observations and data collection
+    document.getElementById('observations').addEventListener('change', function(e) {
+        let data = {observations: e.target.value};
+        generateGraph(data); // Here you would pass actual data points
+    });
+
+    // Animation keyframes
+    document.head.insertAdjacentHTML('beforeend', `
+        <style>
+            @keyframes mix {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `);
+</script>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>

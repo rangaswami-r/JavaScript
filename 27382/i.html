@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customizable Virtual Science Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #lab {
+            width: 90%;
+            max-width: 1200px;
+            background: #fff;
+            margin: 20px 0;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .bench {
+            background: #8B4513;
+            min-height: 200px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .equipment {
+            font-size: 40px;
+            cursor: grab;
+            user-select: none;
+            position: absolute;
+            transition: transform 0.2s ease;
+        }
+        .equipment:nth-child(1) { top: 10px; left: 10px; }
+        .equipment:nth-child(2) { top: 60px; left: 10px; }
+        .equipment:nth-child(3) { top: 110px; left: 10px; }
+        .experiment-area {
+            margin-top: 20px;
+            display: none;
+        }
+        .active-experiment {
+            display: block;
+        }
+        .equipment:hover {
+            transform: scale(1.1);
+        }
+        .experiment-area input, .experiment-area button {
+            margin: 10px 0;
+        }
+        #chartContainer {
+            margin-top: 20px;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding-top: 60px;
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+        .modal-content h2 {
+            margin-top: 0;
+        }
+        .modal-content label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .modal-content button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .modal-content button:hover {
+            background-color: #0056b3;
+        }
+        #recordButton {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        #recordButton:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div id="lab">
+        <h1>Virtual Science Lab</h1>
+        <div class="bench" id="labBench">
+            <i class="equipment fas fa-flask" data-experiment="chemical" role="button" aria-label="Beaker for chemical experiment"></i>
+            <i class="equipment fas fa-microscope" data-experiment="biology" role="button" aria-label="Microscope for biology experiment"></i>
+            <i class="equipment fas fa-burn" data-experiment="physics" role="button" aria-label="Bunsen burner for physics experiment"></i>
+        </div>
+        <div id="experimentArea">
+            <!-- Chemical Experiment -->
+            <div class="experiment-area" id="chemical">
+                <h2>Chemical Reaction</h2>
+                <input type="range" min="0" max="100" value="50" id="chemicalMix" aria-label="Mix chemicals">
+                <div id="reactionResult" style="height: 50px; background-color: blue; transition: background-color 1s;"></div>
+            </div>
+            <!-- Biology Experiment -->
+            <div class="experiment-area" id="biology">
+                <h2>Microscope View</h2>
+                <button onclick="viewSlide()" aria-label="View next slide">Next Slide</button>
+                <div id="slideView" style="width: 100px; height: 100px; background: #ccc; margin-top: 10px;"></div>
+            </div>
+            <!-- Physics Experiment -->
+            <div class="experiment-area" id="physics">
+                <h2>Heat Experiment</h2>
+                <input type="number" id="heatInput" aria-label="Enter temperature in Celsius" placeholder="Temperature (°C)">
+                <button onclick="heatExperiment()">Heat</button>
+                <div id="flameColor" style="width: 50px; height: 50px; background: orange; border-radius: 50%;"></div>
+            </div>
+        </div>
+        <button id="recordButton">Record Observation</button>
+        <div id="chartContainer">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Record Observation</h2>
+            <label for="experimentName">Experiment Name:</label>
+            <select id="experimentName">
+                <option value="chemical">Chemical Reaction</option>
+                <option value="biology">Microscope View</option>
+                <option value="physics">Heat Experiment</option>
+            </select>
+            <label for="observationValue">Observation Value:</label>
+            <input type="text" id="observationValue" placeholder="Enter value">
+            <button id="submitObservation">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        // Drag and drop functionality
+        let draggedElement = null;
+
+        function onMouseMove(e) {
+            if (draggedElement) {
+                const labBench = document.getElementById('labBench');
+                const labRect = labBench.getBoundingClientRect();
+                const elementRect = draggedElement.getBoundingClientRect();
+                const x = e.clientX - labRect.left - (elementRect.width / 2);
+                const y = e.clientY - labRect.top - (elementRect.height / 2);
+
+                // Constrain movement within labBench
+                const newX = Math.max(0, Math.min(labRect.width - elementRect.width, x));
+                const newY = Math.max(0, Math.min(labRect.height - elementRect.height, y));
+
+                draggedElement.style.transform = `translate(${newX}px, ${newY}px)`;
+            }
+        }
+
+        function onMouseUp() {
+            if (draggedElement) {
+                draggedElement.style.cursor = 'grab';
+                draggedElement = null;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+        }
+
+        document.querySelectorAll('.equipment').forEach(item => {
+            item.addEventListener('mousedown', function(e) {
+                draggedElement = this;
+                draggedElement.style.cursor = 'grabbing';
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        });
+
+        // Experiment interactions
+        document.querySelectorAll('.equipment').forEach(item => {
+            item.addEventListener('click', function() {
+                const experiment = this.dataset.experiment;
+                document.querySelectorAll('.experiment-area').forEach(area => {
+                    area.classList.remove('active-experiment');
+                });
+                document.getElementById(experiment).classList.add('active-experiment');
+            });
+        });
+
+        // Chemical Experiment
+        document.getElementById('chemicalMix').oninput = function() {
+            const color = `hsl(${this.value}, 100%, 50%)`;
+            document.getElementById('reactionResult').style.backgroundColor = color;
+        };
+
+        // Biology Experiment
+        function viewSlide() {
+            document.getElementById('slideView').style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        }
+
+        // Physics Experiment
+        function heatExperiment() {
+            const temp = parseFloat(document.getElementById('heatInput').value);
+            const flame = document.getElementById('flameColor');
+            if (isNaN(temp)) return; // Exit if input is not a number
+            if (temp < 500) flame.style.background = 'orange';
+            else if (temp < 1000) flame.style.background = 'yellow';
+            else flame.style.background = 'blue';
+        }
+
+        // Data Collection and Chart
+        let dataPoints = { chemical: [], biology: [], physics: [] };
+        let chart;
+
+        function updateChart() {
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chart) {
+                chart.destroy();
+            }
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: Math.max(dataPoints.chemical.length, dataPoints.biology.length, dataPoints.physics.length)}, (_, i) => i + 1),
+                    datasets: [
+                        {
+                            label: 'Chemical Reaction',
+                            data: dataPoints.chemical,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Microscope View',
+                            data: dataPoints.biology,
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Heat Experiment',
+                            data: dataPoints.physics,
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Observation Count'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Observation Value'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function recordObservation(value, experiment) {
+            dataPoints[experiment].push(parseFloat(value));
+            updateChart();
+        }
+
+        // Modal functionality
+        const modal = document.getElementById('myModal');
+        const closeModal = document.getElementsByClassName('close')[0];
+        const submitButton = document.getElementById('submitObservation');
+
+        document.getElementById('recordButton').onclick = function() {
+            modal.style.display = 'block';
+            setTimeout(() => modal.style.opacity = '1', 10); // Adding fade-in effect
+        }
+
+        closeModal.onclick = function() {
+            modal.style.opacity = '0';
+            setTimeout(() => modal.style.display = 'none', 300); // Adding fade-out effect
+        }
+
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                closeModal.onclick();
+            }
+        }
+
+        submitButton.onclick = function() {
+            const experiment = document.getElementById('experimentName').value;
+            const value = document.getElementById('observationValue').value;
+            if (value !== '' && !isNaN(value)) {
+                recordObservation(value, experiment);
+                document.getElementById('observationValue').value = ''; // Clear input field
+                closeModal.onclick();
+            } else {
+                alert('Please enter a valid value.');
+            }
+        }
+
+        // Initialize chart with dummy data
+        window.onload = function() {
+            dataPoints.chemical = [20, 30, 50, 60, 70];
+            dataPoints.biology = [15, 25, 35, 45, 55];
+            dataPoints.physics = [10, 20, 40, 60, 80];
+            updateChart();
+        };
+
+        // Accessibility enhancements
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const focused = document.activeElement;
+                if (focused.classList.contains('equipment')) {
+                    focused.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
