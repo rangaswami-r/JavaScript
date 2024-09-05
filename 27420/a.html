@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        .sidebar {
+            width: 250px;
+            background: #333;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding-top: 20px;
+        }
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
+            transition: 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #575757;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            width: 100%;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .dashboard-title {
+            color: #333;
+            margin: 0;
+        }
+        .description {
+            color: #666;
+        }
+        .widget {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            transition: transform .2s;
+        }
+        .widget:hover {
+            transform: translateY(-5px);
+        }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin: auto;
+        }
+        .filter {
+            margin-bottom: 10px;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <a href="#grades">Grades Distribution</a>
+    <a href="#gradeCategory">Grade Categories</a>
+    <a href="#trend">Grade Trends</a>
+    <a href="#stats">Key Statistics</a>
+    <a href="#topStudents">Top Students</a>
+</div>
+<div class="main-content">
+    <div class="header">
+        <h1 class="dashboard-title">Educational Insights Dashboard</h1>
+        <p class="description">A comprehensive overview of student performance and educational statistics.</p>
+    </div>
+    <div class="widget" id="grades">
+        <h2>Grades Distribution by Subject</h2>
+        <div class="filter">
+            <label for="subjectFilter">Filter by Subject:</label>
+            <select id="subjectFilter" onchange="updateBarChart()">
+                <option value="all">All Subjects</option>
+                <!-- Options will be dynamically added -->
+            </select>
+        </div>
+        <div class="chart-container">
+            <canvas id="barChart"></canvas>
+        </div>
+    </div>
+    <div class="widget" id="gradeCategory">
+        <h2>Students by Grade Category</h2>
+        <div class="chart-container">
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+    <div class="widget" id="trend">
+        <h2>Average Grades Over Time</h2>
+        <div class="filter">
+            <label for="trendFilter">Filter by Term:</label>
+            <select id="trendFilter" onchange="updateLineChart()">
+                <option value="all">Full Year</option>
+                <option value="term1">Term 1</option>
+                <option value="term2">Term 2</option>
+            </select>
+        </div>
+        <div class="chart-container">
+            <canvas id="lineChart"></canvas>
+        </div>
+    </div>
+    <div class="widget" id="stats">
+        <h2>Key Statistics</h2>
+        <p><strong>Total Students:</strong> <span id="totalStudents"></span></p>
+        <p><strong>Average Grade:</strong> <span id="avgGrade"></span></p>
+        <p><strong>Highest Grade:</strong> <span id="highestGrade"></span></p>
+        <p><strong>Lowest Grade:</strong> <span id="lowestGrade"></span></p>
+    </div>
+    <div class="widget" id="topStudents">
+        <h2>Top 10 Students</h2>
+        <table style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th>Rank</th><th>Name</th><th>Subject</th><th>Grade</th>
+                </tr>
+            </thead>
+            <tbody id="studentTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const students = [
+        {name: 'Alice Smith', subject: 'Math', grade: 95, term: 'term1'},
+        {name: 'Bob Johnson', subject: 'Science', grade: 88, term: 'term2'},
+        {name: 'Charlie Brown', subject: 'English', grade: 92, term: 'term1'},
+        {name: 'Diana Ross', subject: 'History', grade: 85, term: 'term2'},
+        // Add more students here for realistic data
+    ];
+
+    const subjects = [...new Set(students.map(s => s.subject))];
+    const subjectFilter = document.getElementById('subjectFilter');
+    subjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject;
+        option.textContent = subject;
+        subjectFilter.appendChild(option);
+    });
+
+    function updateBarChart() {
+        const selectedSubject = subjectFilter.value === 'all' ? null : subjectFilter.value;
+        const grades = students
+            .filter(s => selectedSubject ? s.subject === selectedSubject : true)
+            .map(s => s.grade);
+        const ctx = document.getElementById('barChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: subjects,
+                datasets: [{
+                    label: 'Average Grades',
+                    data: grades,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Grade: <INLINE_MATH>{context.parsed.y}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updatePieChart() {
+        const gradeCategories = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0};
+        students.forEach(s => {
+            if(s.grade >= 90) gradeCategories['A']++;
+            else if(s.grade >= 80) gradeCategories['B']++;
+            else if(s.grade >= 70) gradeCategories['C']++;
+            else if(s.grade >= 60) gradeCategories['D']++;
+            else gradeCategories['F']++;
+        });
+        const ctx = document.getElementById('pieChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(gradeCategories),
+                datasets: [{
+                    data: Object.values(gradeCategories),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `</INLINE_MATH>{context.label}: <INLINE_MATH>{context.parsed}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateLineChart() {
+        const selectedTerm = document.getElementById('trendFilter').value;
+        const terms = selectedTerm === 'all' ? ['term1', 'term2'] : [selectedTerm];
+        const termGrades = {};
+        terms.forEach(term => {
+            termGrades[term] = students.filter(s => s.term === term).map(s => s.grade);
+        });
+        const ctx = document.getElementById('lineChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: terms,
+                datasets: [{
+                    label: 'Average Grade',
+                    data: terms.map(term => termGrades[term].reduce((a, b) => a + b, 0) / termGrades[term].length),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+
+    function updateStats() {
+        document.getElementById('totalStudents').textContent = students.length;
+        document.getElementById('avgGrade').textContent = (students.reduce((sum, s) => sum + s.grade, 0) / students.length).toFixed(2);
+        document.getElementById('highestGrade').textContent = Math.max(...students.map(s => s.grade));
+        document.getElementById('lowestGrade').textContent = Math.min(...students.map(s => s.grade));
+    }
+
+    function updateTopStudents() {
+        const sortedStudents = students.sort((a, b) => b.grade - a.grade).slice(0, 10);
+        const tbody = document.getElementById('studentTableBody');
+        tbody.innerHTML = '';
+        sortedStudents.forEach((student, index) => {
+            const row = `<tr><td></INLINE_MATH>{index + 1}</td><td>$ {student.name}</td><td> ${student.subject}</td><td>\${student.grade}</td></tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    updateBarChart();
+    updatePieChart();
+    updateLineChart();
+    updateStats();
+    updateTopStudents();
+});
+</script>
+</body>
+</html>
