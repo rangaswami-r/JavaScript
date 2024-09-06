@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Snake Game</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    #gameCanvas {
+        background: #000;
+        border: 2px solid #333;
+    }
+    .game-ui {
+        position: absolute;
+        color: white;
+        text-align: center;
+        width: 300px;
+    }
+    #score, #highScore, #gameOver, #powerUpTimer, #playerRank {
+        display: none;
+    }
+    .button {
+        padding: 10px 20px;
+        margin: 10px;
+        cursor: pointer;
+        background: #28a745;
+        border: none;
+        color: white;
+        font-size: 16px;
+    }
+    .button:hover { background: #218838; }
+</style>
+</head>
+<body>
+<div class="game-ui">
+    <input type="text" id="playerName" placeholder="Enter your name" style="display: block; margin: 10px auto;">
+    <button onclick="startGame()" class="button">Start Game</button>
+    <div id="score">Score: <span id="currentScore">0</span></div>
+    <div id="highScore">High Score: <span id="highestScore">0</span></div>
+    <div id="powerUpTimer"></div>
+    <div id="gameOver">
+        <h2>Game Over</h2>
+        <div id="playerRank"></div>
+        <button onclick="restartGame()" class="button">Restart</button>
+        <button onclick="closeGame()" class="button">Close</button>
+    </div>
+</div>
+<canvas id="gameCanvas" width="400" height="400"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas });
+
+    let snake = [{x: 10, y: 10}];
+    let food = {x: 15, y: 15};
+    let dx = 0, dy = 0;
+    let score = 0;
+    let gameSpeed = 100;
+    let powerUp = null;
+    let powerUpTimer = 0;
+    let playerName = "";
+    let highScores = JSON.parse(localStorage.getItem('snakeHighScores')) || [];
+
+    // Add dummy data
+    if(highScores.length === 0) {
+        highScores.push({name: "Alice", score: 50}, {name: "Bob", score: 45}, {name: "Charlie", score: 40});
+    }
+
+    function startGame() {
+        playerName = document.getElementById('playerName').value || "Anonymous";
+        document.querySelector('.game-ui').style.display = 'none';
+        document.getElementById('score').style.display = 'block';
+        gameLoop();
+    }
+
+    function restartGame() {
+        snake = [{x: 10, y: 10}];
+        dx = 0; dy = 0;
+        score = 0;
+        gameSpeed = 100;
+        powerUp = null;
+        document.getElementById('gameOver').style.display = 'none';
+        document.getElementById('score').style.display = 'block';
+        gameLoop();
+    }
+
+    function closeGame() {
+        document.querySelector('.game-ui').style.display = 'block';
+        document.getElementById('gameOver').style.display = 'none';
+        document.getElementById('score').style.display = 'none';
+    }
+
+    function gameLoop() {
+        if (updateSnake()) {
+            draw();
+            setTimeout(gameLoop, gameSpeed);
+        } else {
+            gameOver();
+        }
+    }
+
+    function updateSnake() {
+        const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+        if (head.x < 0 || head.y < 0 || head.x >= canvas.width / 10 || head.y >= canvas.height / 10 ||
+            snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            return false;
+        }
+        snake.unshift(head);
+
+        if (head.x === food.x && head.y === food.y) {
+            score += 1;
+            document.getElementById('currentScore').textContent = score;
+            gameSpeed = Math.max(50, gameSpeed - 5);
+            placeFood();
+            placePowerUp();
+        } else if (powerUp && head.x === powerUp.x && head.y === powerUp.y) {
+            applyPowerUp();
+            powerUp = null;
+        } else {
+            snake.pop();
+        }
+        return true;
+    }
+
+    function applyPowerUp() {
+        if (powerUp.type === 'speed') {
+            gameSpeed = 50;
+        } else if (powerUp.type === 'slow') {
+            gameSpeed = 200;
+        }
+        powerUpTimer = 5;
+        document.getElementById('powerUpTimer').style.display = 'block';
+        document.getElementById('powerUpTimer').textContent = `Power Up: ${powerUpTimer}s`;
+        const timer = setInterval(() => {
+            powerUpTimer--;
+            document.getElementById('powerUpTimer').textContent = `Power Up: ${powerUpTimer}s`;
+            if (powerUpTimer <= 0) {
+                clearInterval(timer);
+                document.getElementById('powerUpTimer').style.display = 'none';
+                gameSpeed = 100 - (score * 5); // Reset speed based on current score
+            }
+        }, 1000);
+    }
+
+    function placeFood() {
+        food = {
+            x: Math.floor(Math.random() * (canvas.width / 10)),
+            y: Math.floor(Math.random() * (canvas.height / 10))
+        };
+    }
+
+    function placePowerUp() {
+        if (Math.random() < 0.1) { // 10% chance of power-up appearing
+            powerUp = {
+                x: Math.floor(Math.random() * (canvas.width / 10)),
+                y: Math.floor(Math.random() * (canvas.height / 10)),
+                type: Math.random() < 0.5 ? 'speed' : 'slow'
+            };
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 3D setup (simplified for this example)
+        renderer.setSize(canvas.width, canvas.height);
+        camera.position.z = 5;
+
+        // Clear scene
+        scene.children.forEach(child => scene.remove(child));
+
+        // Draw snake in 3D
+        snake.forEach((segment, index) => {
+            const geometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+            const material = new THREE.MeshBasicMaterial({ color: index === 0 ? 0x00ff00 : 0x008000 });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(segment.x * 10 - 200, segment.y * 10 - 200, 0);
+            scene.add(cube);
+        });
+
+        // Draw food
+        const foodGeometry = new THREE.SphereGeometry(0.45, 32, 32);
+        const foodMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
+        const foodMesh = new THREE.Mesh(foodGeometry, foodMaterial);
+        foodMesh.position.set(food.x * 10 - 200, food.y * 10 - 200, 0);
+        scene.add(foodMesh);
+
+        // Draw power-up if exists
+        if (powerUp) {
+            const powerUpGeometry = new THREE.SphereGeometry(0.6, 32, 32);
+            const powerUpMaterial = new THREE.MeshBasicMaterial({color: powerUp.type === 'speed' ? 0x0000ff : 0xffff00});
+            const powerUpMesh = new THREE.Mesh(powerUpGeometry, powerUpMaterial);
+            powerUpMesh.position.set(powerUp.x * 10 - 200, powerUp.y * 10 - 200, 0);
+            scene.add(powerUpMesh);
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    function gameOver() {
+        document.getElementById('score').style.display = 'none';
+        document.getElementById('gameOver').style.display = 'block';
+        const currentHighScore = highScores.find(h => h.name === playerName);
+        if (!currentHighScore || score > currentHighScore.score) {
+            if (currentHighScore) {
+                currentHighScore.score = score;
+            } else {
+                highScores.push({name: playerName, score: score});
+            }
+            highScores.sort((a, b) => b.score - a.score).splice(5);
+            localStorage.setItem('snakeHighScores', JSON.stringify(highScores));
+        }
+
+        document.getElementById('playerRank').innerHTML =
+            `Your Score: ${score}<br>Rank:<br>` +
+            highScores.map((h, index) => `${index + 1}. ${h.name}: ${h.score}`).join('<br>');
+    }
+
+    document.addEventListener('keydown', (e) => {
+        const key = e.key;
+        if (key === 'ArrowUp' || key === 'w') dy = -1, dx = 0;
+        else if (key === 'ArrowDown' || key === 's') dy = 1, dx = 0;
+        else if (key === 'ArrowLeft' || key === 'a') dx = -1, dy = 0;
+        else if (key === 'ArrowRight' || key === 'd') dx = 1, dy = 0;
+    });
+
+    placeFood();
+</script>
+</body>
+</html>
