@@ -2,107 +2,89 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive 3D Chemistry Lab</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <title>World Time Zone Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
-        #labCanvas { width: 100%; height: 70vh; display: block; }
-        .infoPanel { background: #fff; padding: 20px; margin: 10px 0; border-radius: 8px; }
-        .button { background: #58a; color: white; padding: 10px 15px; border: none; cursor: pointer; }
-        .button:hover { background: #479; }
+        body { margin: 0; padding: 0; }
+        #map { width: 100vw; height: 100vh; transition: all 0.5s; }
+        .timezone-info {
+            position: absolute; bottom: 10px; left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px; border-radius: 5px;
+            transition: opacity 0.3s;
+        }
+        .city-marker {
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .daylight {
+            filter: drop-shadow(0px 0px 10px yellow);
+        }
     </style>
 </head>
 <body>
-    <div id="labCanvas"></div>
-    <div class="infoPanel" id="dataVisualization"></div>
-    <div class="infoPanel" id="safetyTips"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+<div id="map"></div>
+<div class="timezone-info" style="display:none;">Local Time: <span id="localTime"></span></div>
 
-    <script>
-    // Three.js for 3D Lab
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
-    document.getElementById('labCanvas').appendChild(renderer.domElement);
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://momentjs.com/downloads/moment.min.js"></script>
+<script src="https://momentjs.com/downloads/moment-timezone-with-data.min.js"></script>
 
-    // Basic setup for 3D environment
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({color: 0x00ff00});
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+<script>
+    const map = L.map('map', {
+        center: [20, 0],
+        zoom: 2,
+        minZoom: 2,
+        maxZoom: 6,
+        zoomControl: false
+    });
 
-    camera.position.z = 5;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    function animate() {
-        requestAnimationFrame(animate);
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
-        renderer.render(scene, camera);
-    }
-    animate();
+    const cities = [
+        {name: "New York", lat: 40.7128, lng: -74.0060, tz: "America/New_York"},
+        {name: "London", lat: 51.5074, lng: -0.1278, tz: "Europe/London"},
+        // Add more cities as needed
+    ];
 
-    // p5.js for chemical reactions - integrate within Three.js environment or separate canvas
-    function setup() {
-        let canvas = createCanvas(300, 200);
-        canvas.parent('labCanvas');
-    }
+    cities.forEach(city => {
+        const icon = L.divIcon({className: 'city-marker', html: `<div style="width: 10px; height: 10px; background: red; border-radius: 50%;"></div>`});
+        L.marker([city.lat, city.lng], {icon: icon}).addTo(map)
+            .on('click', function() { showTime(city.tz); });
+    });
 
-    function draw() {
-        background(200);
-        // Example: simple particle system
-        for(let i = 0; i < 10; i++) {
-            fill(random(255), random(255), random(255));
-            ellipse(random(width), random(height), 10, 10);
-        }
+    function showTime(tz) {
+        const time = moment().tz(tz).format('HH:mm:ss');
+        document.getElementById('localTime').textContent = time;
+        document.querySelector('.timezone-info').style.display = 'block';
     }
 
-    // D3.js for data visualization
-    const data = [30, 86, 168, 281, 303, 365];
-    const svg = d3.select("#dataVisualization").append("svg")
-        .attr("width", 300).attr("height", 200);
-    svg.selectAll("rect")
-        .data(data)
-        .enter().append("rect")
-        .attr("x", (d, i) => i * 50)
-        .attr("y", d => 200 - d)
-        .attr("width", 40)
-        .attr("height", d => d)
-        .attr("fill", "steelblue");
+    // Simple daylight saving time visual effect
+    setInterval(() => {
+        const now = moment();
+        cities.forEach(city => {
+            const marker = map.getPane('markerPane').getElementsByClassName('city-marker')[cities.indexOf(city)];
+            if (moment.tz.zone(city.tz).utcOffset(now) !== moment.tz(city.tz).offset()) {
+                marker.classList.add('daylight');
+            } else {
+                marker.classList.remove('daylight');
+            }
+        });
+    }, 1000);
 
-    // Phaser for safety tips - basic setup
-    const config = {
-        type: Phaser.AUTO,
-        width: 800,
-        height: 600,
-        parent: 'safetyTips',
-        scene: {
-            preload: preload,
-            create: create
-        }
-    };
+    // Smooth zoom and pan
+    map.on('zoomstart', function() {
+        document.getElementById('map').style.transition = 'transform 0.3s ease';
+    });
 
-    const game = new Phaser.Game(config);
+    map.on('moveend', function() {
+        document.getElementById('map').style.transition = 'transform 0.3s ease';
+    });
+</script>
 
-    function preload() {
-        this.load.image('safety', 'path_to_safety_image.png');
-    }
-
-    function create() {
-        this.add.image(400, 300, 'safety');
-    }
-
-    // Responsive design adjustments
-    window.onresize = function() {
-        renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
-        camera.aspect = window.innerWidth / (window.innerHeight * 0.7);
-        camera.updateProjectionMatrix();
-    };
-    </script>
 </body>
 </html>

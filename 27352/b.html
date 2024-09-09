@@ -3,116 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Interactive Chemistry Lab</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <title>World Time Zone Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
         body {
             margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-color: #f0f0f0;
-            overflow: hidden;
+            font-family: Arial, sans-serif;
         }
-        #three-container {
-            width: 100vw;
+        #map {
+            width: 100%;
             height: 100vh;
             display: block;
         }
-        #reaction-data {
+        #time-display {
             position: absolute;
             top: 10px;
             left: 10px;
-            background: #fff;
+            background: white;
             padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <div id="three-container"></div>
-    <div id="reaction-data"></div>
+    <div id="map"></div>
+    <div id="time-display">
+        <h2>Local Time: <span id="local-time"></span></h2>
+    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.50.1/dist/phaser.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/d3@7"></script>
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+    <script src="https://momentjs.com/downloads/moment-timezone-with-data.js"></script>
+
     <script>
-        // Three.js setup for 3D Lab
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({
-            canvas: document.getElementById('three-container'),
-            antialias: true
-        });
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        // Initialize Map
+        const map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+            subdomains: ['a', 'b', 'c']
+        }).addTo(map);
 
-        // Load 3D models (like beakers, test tubes, etc.)
-        const loader = new THREE.GLTFLoader();
-        loader.load('models/beaker.gltf', function(gltf) {
-            scene.add(gltf.scene);
-        });
+        // Load GeoJSON for time zones
+        d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/world/110m.json').then(world => {
+            const geoJsonLayer = L.geoJson(topojson.feature(world, world.objects.countries), {
+                style: feature => {
+                    return {
+                        fillColor: getTimeZoneColor(feature.id),
+                        weight: 1,
+                        opacity: 1,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: 0.7
+                    };
+                },
+                onEachFeature: onEachFeature
+            }).addTo(map);
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0x444444);
-        scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0xffffff, 1, 100);
-        pointLight.position.set(5, 5, 5);
-        scene.add(pointLight);
-
-        // Camera controls for zoom functionality
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // p5.js for chemical reactions
-        function setup() {
-            createCanvas(window.innerWidth, window.innerHeight, WEBGL);
-        }
-
-        function draw() {
-            background(220);
-            // Simulate reactions here
-        }
-
-        // D3.js for real-time reaction data
-        const dataDiv = d3.select('#reaction-data');
-        const margin = {top: 10, right: 30, bottom: 30, left: 40},
-              width = 200 - margin.left - margin.right,
-              height = 150 - margin.top - margin.bottom;
-
-        const svg = dataDiv.append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-            .append('g')
-            .attr('transform', `translate(${margin.left},${margin.top})`);
-
-        // Phaser for safety tips
-        const config = {
-            type: Phaser.CANVAS,
-            parent: 'three-container',
-            width: window.innerWidth,
-            height: window.innerHeight,
-            scene: {
-                preload: preloadSafetyTips,
-                create: createSafetyTips
+            function onEachFeature(feature, layer) {
+                layer.on({
+                    click: updateTime
+                });
             }
-        };
 
-        const game = new Phaser.Game(config);
+            function updateTime(e) {
+                const featureId = e.target.feature.id;
+                const timeZone = getTimeZoneFromId(featureId);
+                document.getElementById('local-time').textContent = moment().tz(timeZone).format('HH:mm:ss');
+                highlightZone(e.target);
+            }
 
-        function preloadSafetyTips() {
-            this.load.image('safetyTip', 'assets/safety_tip.png');
+            function highlightZone(layer) {
+                // Add animations and styles to highlight the selected zone
+                layer.setStyle({
+                    fillOpacity: 0.9,
+                    fillColor: '#ffff00'
+                });
+            }
+        });
+
+        function getTimeZoneColor(countryId) {
+            // This function would map country IDs to time zones and then to colors
+            // For simplicity, let's just return a static color
+            return '#888';
         }
 
-        function createSafetyTips() {
-            this.add.image(100, 100, 'safetyTip').setInteractive();
+        function getTimeZoneFromId(countryId) {
+            // This function would return the time zone for a given country ID
+            // For simplicity, let's return a static time zone
+            return 'America/New_York';
         }
-
     </script>
 </body>
 </html>
