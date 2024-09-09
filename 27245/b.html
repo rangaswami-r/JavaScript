@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic-Tac-Toe Enhanced</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+        margin: 0;
+    }
+    .game-container {
+        text-align: center;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #board {
+        display: grid;
+        margin: 20px auto;
+        width: 300px;
+        height: 300px;
+    }
+    .cell {
+        border: 1px solid #ccc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2em;
+        cursor: pointer;
+    }
+    .cell:hover { background-color: #eee; }
+    #notifications {
+        height: 20px;
+        color: red;
+    }
+    .move-history {
+        margin-top: 20px;
+    }
+    button {
+        margin: 10px;
+        padding: 10px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+<div class="game-container">
+    <h1>Tic-Tac-Toe</h1>
+    <label for="boardSize">Choose Board Size:</label>
+    <select id="boardSize">
+        <option value="3">3x3</option>
+        <option value="4">4x4</option>
+        <option value="5">5x5</option>
+    </select>
+    <button onclick="startGame()">Start Game</button>
+    <div id="board"></div>
+    <div id="notifications"></div>
+    <div class="move-history">
+        <h3>Move History:</h3>
+        <div id="player1Moves">Player 1: </div>
+        <div id="player2Moves">Player 2: </div>
+    </div>
+    <button onclick="undoMove()" disabled>Undo Move</button>
+    <button onclick="swapTurns()" disabled>Swap Turns</button>
+</div>
+
+<script>
+let boardSize = 3;
+let board = [];
+let currentPlayer = 'X';
+let moveCount = 0;
+let playerMoves = { 'X': [], 'O': [] };
+let playerNames = { 'X': 'Player 1', 'O': 'Player 2' };
+let canUndo = true; // To ensure undo can only be used once per turn
+let canSwap = true; // Similar for swap
+
+function startGame() {
+    boardSize = parseInt(document.getElementById('boardSize').value);
+    board = Array(boardSize * boardSize).fill(null);
+    currentPlayer = 'X';
+    moveCount = 0;
+    playerMoves = { 'X': [], 'O': [] };
+    document.getElementById('board').style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+    createBoard();
+    document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+}
+
+function createBoard() {
+    const boardDiv = document.getElementById('board');
+    boardDiv.innerHTML = '';
+    for(let i = 0; i < boardSize * boardSize; i++) {
+        let cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = `cell-${i}`;
+        cell.addEventListener('click', () => makeMove(i));
+        boardDiv.appendChild(cell);
+    }
+}
+
+function makeMove(position) {
+    if (board[position] || checkWinner()) return;
+
+    board[position] = currentPlayer;
+    document.getElementById(`cell-${position}`).textContent = currentPlayer;
+    moveCount++;
+    playerMoves[currentPlayer].push(position);
+
+    if (playerMoves[currentPlayer].length > 2) {
+        let oldMove = playerMoves[currentPlayer].shift();
+        board[oldMove] = null;
+        document.getElementById(`cell-${oldMove}`).textContent = '';
+    }
+
+    updateMoveHistory();
+
+    if (checkWinner()) {
+        document.getElementById('notifications').textContent = `${playerNames[currentPlayer]} wins!`;
+        disableBoard();
+    } else if (moveCount === boardSize * boardSize) {
+        document.getElementById('notifications').textContent = "It's a draw!";
+        disableBoard();
+    } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        document.getElementById('notifications').textContent = `${playerNames[currentPlayer]}'s turn`;
+    }
+}
+
+function checkWinner() {
+    const lines = getWinningLines();
+    for(let line of lines) {
+        const [a, b, c] = line;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function getWinningLines() {
+    let lines = [];
+    // Rows, Columns, Diagonals
+    for (let i = 0; i < boardSize; i++) {
+        // Rows
+        lines.push(Array.from({length: boardSize}, (_, k) => i * boardSize + k));
+        // Columns
+        lines.push(Array.from({length: boardSize}, (_, k) => i + k * boardSize));
+    }
+    // Diagonals
+    lines.push(Array.from({length: boardSize}, (_, k) => k * (boardSize + 1)));
+    lines.push(Array.from({length: boardSize}, (_, k) => (k + 1) * (boardSize - 1)));
+    return lines;
+}
+
+function disableBoard() {
+    document.querySelectorAll('.cell').forEach(cell => cell.style.pointerEvents = 'none');
+}
+
+function updateMoveHistory() {
+    ['X', 'O'].forEach(player => {
+        document.getElementById(`player${player}Moves`).textContent = `${playerNames[player]}: ${playerMoves[player].slice(-1)}`;
+    });
+}
+
+function undoMove() {
+    if (!canUndo || moveCount === 0) return;
+    let lastMove = playerMoves[currentPlayer].pop();
+    board[lastMove] = null;
+    document.getElementById(`cell-${lastMove}`).textContent = '';
+    moveCount--;
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    canUndo = false;
+    document.getElementById('notifications').textContent = `${playerNames[currentPlayer]}'s turn after undo`;
+}
+
+function swapTurns() {
+    if (!canSwap) return;
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    canSwap = false;
+    document.getElementById('notifications').textContent = `Turns swapped. Now ${playerNames[currentPlayer]}'s turn`;
+}
+
+// Initial setup for player names would typically be here, but for simplicity:
+playerNames = { 'X': prompt("Enter name for Player X:"), 'O': prompt("Enter name for Player O:") };
+
+</script>
+</body>
+</html>

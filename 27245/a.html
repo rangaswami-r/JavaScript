@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Tic-Tac-Toe</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    #gameBoard { margin: 20px auto; border-collapse: collapse; }
+    #gameBoard td { width: 50px; height: 50px; border: 2px solid black; text-align: center; vertical-align: middle; font-size: 24px; cursor: pointer; }
+    #gameBoard td:hover { background-color: #f0f0f0; }
+    .playerInfo { margin: 10px; display: inline-block; }
+    #notification { padding: 10px; background-color: #e7f3fe; border-left: 6px solid #2196F3; margin-bottom: 15px; display: none; }
+    .power-up { margin: 10px; padding: 5px; cursor: pointer; background-color: #ddd; border: none; }
+</style>
+</head>
+<body>
+
+<h1>Advanced Tic-Tac-Toe</h1>
+<div>
+    <label for="size">Board Size:</label>
+    <select id="size">
+        <option value="3">3x3</option>
+        <option value="4">4x4</option>
+        <option value="5">5x5</option>
+    </select>
+    <button onclick="startGame()">Start Game</button>
+</div>
+
+<div id="playerNames">
+    <input type="text" id="player1Name" placeholder="Player 1 Name" value="Player 1">
+    <input type="text" id="player2Name" placeholder="Player 2 Name" value="Player 2">
+</div>
+
+<div id="gameArea" style="display:none;">
+    <div id="notification"></div>
+    <table id="gameBoard"></table>
+    <div>
+        <button class="power-up" onclick="usePowerUp('undo')">Undo Move</button>
+        <button class="power-up" onclick="usePowerUp('swap')">Swap Turns</button>
+    </div>
+    <div class="playerInfo" id="player1Info"></div>
+    <div class="playerInfo" id="player2Info"></div>
+</div>
+
+<script>
+let boardSize = 3;
+let board = [];
+let currentPlayer = 'X';
+let moves = { 'X': [], 'O': [] };
+let moveCount = 0;
+let powerUps = { 'undo': 1, 'swap': 1 };
+
+function startGame() {
+    boardSize = parseInt(document.getElementById('size').value);
+    board = Array(boardSize).fill().map(() => Array(boardSize).fill(''));
+    currentPlayer = 'X';
+    document.getElementById('gameArea').style.display = 'block';
+    document.getElementById('playerNames').style.display = 'none';
+    setupBoard();
+    updatePlayerInfo();
+}
+
+function setupBoard() {
+    let table = document.getElementById('gameBoard');
+    table.innerHTML = '';
+    for (let i = 0; i < boardSize; i++) {
+        let row = table.insertRow();
+        for (let j = 0; j < boardSize; j++) {
+            let cell = row.insertCell();
+            cell.onclick = function() { makeMove(i, j); };
+        }
+    }
+}
+
+function makeMove(x, y) {
+    if (board[x][y] === '') {
+        board[x][y] = currentPlayer;
+        moves[currentPlayer].push({x, y});
+        if (moves[currentPlayer].length > 2) {
+            let oldestMove = moves[currentPlayer].shift();
+            board[oldestMove.x][oldestMove.y] = ''; // Remove oldest move if more than 2
+        }
+        moveCount++;
+        checkWin(x, y);
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        updateBoard();
+        updatePlayerInfo();
+        checkDraw();
+    }
+}
+
+function checkWin(x, y) {
+    let directions = [
+        [0, 1], [1, 0], [1, 1], [1, -1] // horizontal, vertical, diagonal, anti-diagonal
+    ];
+    for (let dir of directions) {
+        let count = 1;
+        for (let i of [-1, 1]) {
+            for (let step = 1; step < boardSize; step++) {
+                let nx = x + dir[0] * step * i, ny = y + dir[1] * step * i;
+                if (nx < 0 || ny < 0 || nx >= boardSize || ny >= boardSize || board[nx][ny] !== currentPlayer) break;
+                count++;
+            }
+        }
+        if (count >= Math.min(boardSize, 3)) {  // Win condition adjusted for board size
+            announceWin();
+            return;
+        }
+    }
+}
+
+function announceWin() {
+    document.getElementById('notification').innerText = `${document.getElementById(currentPlayer === 'X' ? 'player1Name' : 'player2Name').value} wins!`;
+    document.getElementById('notification').style.display = 'block';
+    disableBoard();
+}
+
+function checkDraw() {
+    if (moveCount >= boardSize * boardSize) {
+        document.getElementById('notification').innerText = "It's a draw!";
+        document.getElementById('notification').style.display = 'block';
+        disableBoard();
+    }
+}
+
+function usePowerUp(type) {
+    if (powerUps[type] > 0) {
+        if (type === 'undo') {
+            undoMove();
+        } else if (type === 'swap') {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        }
+        powerUps[type]--;
+        updatePlayerInfo();
+    }
+}
+
+function undoMove() {
+    let lastMove = moves[currentPlayer].pop();
+    if (lastMove) {
+        board[lastMove.x][lastMove.y] = '';
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        moveCount--;
+        updateBoard();
+    }
+}
+
+function updateBoard() {
+    $('#gameBoard td').each(function(i, td) {
+        let row = Math.floor(i / boardSize), col = i % boardSize;
+        $(td).text(board[row][col]);
+    });
+}
+
+function updatePlayerInfo() {
+    ['1', '2'].forEach(num => {
+        let player = num == '1' ? 'X' : 'O';
+        document.getElementById(`player${num}Info`).innerHTML = `
+            ${document.getElementById(`player${num}Name`).value} (${player})<br>
+            Last Move: ${moves[player].length ? `${moves[player][moves[player].length - 1].x},${moves[player][moves[player].length - 1].y}` : 'None'}<br>
+            Power-ups: Undo (${powerUps['undo']}), Swap (${powerUps['swap']})
+        `;
+    });
+}
+
+function disableBoard() {
+    $('#gameBoard td').off('click');
+}
+
+</script>
+</body>
+</html>

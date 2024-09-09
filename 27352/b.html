@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Interactive Chemistry Lab</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+        #three-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        #reaction-data {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="three-container"></div>
+    <div id="reaction-data"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.50.1/dist/phaser.min.js"></script>
+    <script>
+        // Three.js setup for 3D Lab
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('three-container'),
+            antialias: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Load 3D models (like beakers, test tubes, etc.)
+        const loader = new THREE.GLTFLoader();
+        loader.load('models/beaker.gltf', function(gltf) {
+            scene.add(gltf.scene);
+        });
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x444444);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // Camera controls for zoom functionality
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // p5.js for chemical reactions
+        function setup() {
+            createCanvas(window.innerWidth, window.innerHeight, WEBGL);
+        }
+
+        function draw() {
+            background(220);
+            // Simulate reactions here
+        }
+
+        // D3.js for real-time reaction data
+        const dataDiv = d3.select('#reaction-data');
+        const margin = {top: 10, right: 30, bottom: 30, left: 40},
+              width = 200 - margin.left - margin.right,
+              height = 150 - margin.top - margin.bottom;
+
+        const svg = dataDiv.append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+            .append('g')
+            .attr('transform', `translate(${margin.left},${margin.top})`);
+
+        // Phaser for safety tips
+        const config = {
+            type: Phaser.CANVAS,
+            parent: 'three-container',
+            width: window.innerWidth,
+            height: window.innerHeight,
+            scene: {
+                preload: preloadSafetyTips,
+                create: createSafetyTips
+            }
+        };
+
+        const game = new Phaser.Game(config);
+
+        function preloadSafetyTips() {
+            this.load.image('safetyTip', 'assets/safety_tip.png');
+        }
+
+        function createSafetyTips() {
+            this.add.image(100, 100, 'safetyTip').setInteractive();
+        }
+
+    </script>
+</body>
+</html>

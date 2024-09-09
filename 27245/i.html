@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Tic-Tac-Toe</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  #game-container {
+    width: auto;
+    text-align: center;
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+  }
+  #status {
+    font-size: 1.2em;
+    padding: 10px;
+    background-color: #e3f2fd;
+    border-radius: 5px;
+    border: 1px solid #b3e5fc;
+    color: #0277bd;
+    margin-bottom: 20px;
+  }
+  #status.winner-message {
+    color: green;
+    background-color: #e8f5e9;
+    border-color: #c8e6c9;
+  }
+  #name-entry, #board-size, #history, #controls {
+    margin-bottom: 20px;
+  }
+  #name-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #name-entry input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+    width: 100%;
+  }
+  #name-entry button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #2196F3;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  #name-entry button:hover {
+    background-color: #1976D2;
+  }
+  #board-size {
+    display: none;
+    color: #2196F3;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  #board-size div {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+  }
+  #board-size button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #4CAF50;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1em;
+    margin: 5px;
+  }
+  #board-size button:hover {
+    background-color: #388E3C;
+  }
+  #board {
+    display: grid;
+    grid-gap: 5px;
+    margin: 0 auto;
+    background-color: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .cell {
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+  .cell:hover {
+    background: #f5f5f5;
+  }
+  .cell.disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+  .cell.x-player {
+    color: green;
+  }
+  .cell.o-player {
+    color: blue;
+  }
+  #history {
+    display: none;
+    font-size: 1em;
+  }
+  #history div {
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  #controls {
+    display: none;
+  }
+  #controls button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #2196F3;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1em;
+    margin: 5px;
+  }
+  #controls button:hover {
+    background-color: #1976D2;
+  }
+  .winner-line {
+    position: absolute;
+    background: red;
+    z-index: 1;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="status">Enter player names to start the game.</div>
+  <div id="name-entry">
+    <div>
+      <label for="player-x-name">Player X Name: </label>
+      <input type="text" id="player-x-name" placeholder="Enter name">
+    </div>
+    <div>
+      <label for="player-o-name">Player O Name: </label>
+      <input type="text" id="player-o-name" placeholder="Enter name">
+    </div>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+  <div id="board-size">
+    <!-- <div id="status">Please select the game size</div> -->
+    <button onclick="initGame(3)">3x3</button>
+    <button onclick="initGame(4)">4x4</button>
+    <button onclick="initGame(5)">5x5</button>
+  </div>
+  <div id="history">
+    <div id="player-x-last-move">Player X's last move: <span id="x-last-move">-</span></div>
+    <div id="player-o-last-move">Player O's last move: <span id="o-last-move">-</span></div>
+  </div>
+  <div id="board"></div>
+  <div id="controls">
+    <button onclick="undoMove()">Undo Move</button>
+    <button onclick="swapTurns()">Swap Turns</button>
+  </div>
+</div>
+
+<script>
+  let boardSize;
+  let currentPlayer = 'X';
+  let moves = { 'X': [], 'O': [] };
+  let history = { 'X': [], 'O': [] };
+  let winPatterns;
+  let cells;
+  let lastMoveIndex = { 'X': null, 'O': null };
+  let playerNames = { 'X': '', 'O': '' };
+
+  function startGame() {
+    const playerXName = document.getElementById('player-x-name').value.trim();
+    const playerOName = document.getElementById('player-o-name').value.trim();
+
+    if (!playerXName || !playerOName) {
+      alert('Please enter names for both players.');
+      return;
+    }
+
+    playerNames['X'] = playerXName;
+    playerNames['O'] = playerOName;
+
+    document.getElementById('name-entry').style.display = 'none';
+    document.getElementById('status').textContent = 'Please select the game size';
+    document.getElementById('board-size').style.display = 'block';
+  }
+
+  function initGame(size) {
+    boardSize = size;
+    document.getElementById('board-size').style.display = 'none';
+    document.getElementById('history').style.display = 'block';
+    document.getElementById('controls').style.display = 'block';
+    const board = document.getElementById('board');
+    board.style.gridTemplateColumns = `repeat(${size}, 100px)`;
+    board.style.gridTemplateRows = `repeat(${size}, 100px)`; // Ensure rows align correctly
+    board.innerHTML = '';
+    for (let i = 0; i < size * size; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.index = i;
+      board.appendChild(cell);
+    }
+    cells = document.querySelectorAll('.cell');
+    winPatterns = generateWinPatterns(size);
+    cells.forEach((cell, index) => {
+      cell.onclick = () => makeMove(cell, index);
+    });
+    document.getElementById('status').textContent = `Player ${currentPlayer} (${playerNames[currentPlayer]})'s Turn`;
+  }
+
+  function generateWinPatterns(size) {
+    const patterns = [];
+    for (let i = 0; i < size; i++) {
+      const row = Array.from({length: size}, (_, j) => i * size + j);
+      const col = Array.from({length: size}, (_, j) => j * size + i);
+      patterns.push(row, col);
+    }
+    const diagonal1 = Array.from({length: size}, (_, i) => i * size + i);
+    const diagonal2 = Array.from({length: size}, (_, i) => (size - 1 - i) * size + i);
+    patterns.push(diagonal1, diagonal2);
+    return patterns;
+  }
+
+  function makeMove(cell, index) {
+    if (!cell.textContent && !cell.classList.contains('disabled')) {
+      cell.textContent = currentPlayer;
+      cell.classList.add(`${currentPlayer.toLowerCase()}-player`);
+      moves[currentPlayer].push(index);
+      history[currentPlayer].push(index);
+      lastMoveIndex[currentPlayer] = index;
+      document.getElementById(`${currentPlayer.toLowerCase()}-last-move`).textContent = index + 1;
+
+      const winner = checkWinner([...cells].map(c => c.textContent));
+      if (winner) {
+        document.getElementById('status').textContent = `Player ${winner} (${playerNames[winner]}) wins!`;
+        document.getElementById('status').classList.add('winner-message');
+        drawWinningLine(winner);
+        disableAllCells();
+        document.getElementById('controls').style.display = 'none';
+        return;
+      }
+      if (moves.X.length + moves.O.length === boardSize * boardSize) {
+        document.getElementById('status').textContent = 'Game ends in a draw!';
+        document.getElementById('status').classList.remove('winner-message');
+        document.getElementById('controls').style.display = 'none';
+        return;
+      }
+
+      if (moves[currentPlayer].length > boardSize-1) {
+        const oldestMove = moves[currentPlayer].shift();
+        cells[oldestMove].textContent = '';
+        cells[oldestMove].classList.remove(`${currentPlayer.toLowerCase()}-player`);
+      }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      document.getElementById('status').textContent = `Player ${currentPlayer} (${playerNames[currentPlayer]})'s Turn`;
+      document.getElementById('status').classList.remove('winner-message');
+    }
+  }
+
+  function checkWinner(board) {
+    for (let pattern of winPatterns) {
+      const firstSymbol = board[pattern[0]];
+      if (firstSymbol && pattern.every(index => board[index] === firstSymbol)) {
+        return firstSymbol;
+      }
+    }
+    return null;
+  }
+
+  function drawWinningLine(winner) {
+    const winningPattern = winPatterns.find(pattern => {
+      const firstSymbol = cells[pattern[0]].textContent;
+      return firstSymbol && pattern.every(index => cells[index].textContent === firstSymbol);
+    });
+    if (winningPattern) {
+      const boardRect = document.getElementById('board').getBoundingClientRect();
+      const cellSize = cells[0].getBoundingClientRect().width;
+      const startCell = cells[winningPattern[0]].getBoundingClientRect();
+      const endCell = cells[winningPattern[winningPattern.length - 1]].getBoundingClientRect();
+
+      const line = document.createElement('div');
+      line.className = 'winner-line';
+      line.style.width = Math.sqrt(Math.pow(endCell.left - startCell.left, 2) + Math.pow(endCell.top - startCell.top, 2)) + 'px';
+      line.style.left = startCell.left - boardRect.left + (cellSize / 2) + 'px';
+      line.style.top = startCell.top - boardRect.top + (cellSize / 2) + 'px';
+      line.style.transform = `rotate(${Math.atan2(endCell.top - startCell.top, endCell.left - startCell.left)}rad)`;
+      document.getElementById('game-container').appendChild(line);
+    }
+  }
+
+  function disableAllCells() {
+    cells.forEach(cell => {
+      cell.classList.add('disabled');
+      cell.onclick = null;
+    });
+  }
+
+  function undoMove() {
+    if (history[currentPlayer].length > 0) {
+      const lastMove = history[currentPlayer].pop();
+      cells[lastMove].textContent = '';
+      cells[lastMove].classList.remove(`${currentPlayer.toLowerCase()}-player`);
+      moves[currentPlayer] = moves[currentPlayer].filter(move => move !== lastMove);
+      document.getElementById(`${currentPlayer.toLowerCase()}-last-move`).textContent = history[currentPlayer].length > 0 ? history[currentPlayer][history[currentPlayer].length - 1] + 1 : '-';
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      document.getElementById('status').textContent = `Player ${currentPlayer} (${playerNames[currentPlayer]})'s Turn`;
+    }
+  }
+
+  function swapTurns() {
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    document.getElementById('status').textContent = `Player ${currentPlayer} (${playerNames[currentPlayer]})'s Turn`;
+  }
+</script>
+
+</body>
+</html>
