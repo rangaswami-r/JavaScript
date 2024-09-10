@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Home Lighting Control</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    #house3D { width: 100%; height: 400px; }
+    .control-panel { background: #f8f9fa; padding: 20px; border-radius: 8px; }
+    #colorWheel { cursor: pointer; }
+    .slider { -webkit-appearance: none; width: 100%; height: 15px; border-radius: 5px; background: #d3d3d3; outline: none; }
+    .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 25px; height: 25px; border-radius: 50%; background: #4CAF50; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div id="house3D"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="control-panel">
+                <h4>Lighting Control</h4>
+                <div id="currentStatus"></div>
+                <input type="range" min="1" max="100" value="50" class="slider" id="brightnessSlider">
+                <canvas id="colorWheel" width="200" height="200"></canvas>
+                <div id="sunPosition" style="text-align: center; margin-top: 20px;">
+                    <span>☀️ Sun Position</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-color-picker@latest"></script>
+<script>
+$(document).ready(function() {
+    // Initialize 3D house model
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, $('#house3D').width() / $('#house3D').height(), 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize($('#house3D').width(), $('#house3D').height());
+    $('#house3D').append(renderer.domElement);
+
+    // Basic 3D model for demonstration
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+    camera.position.z = 5;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Color wheel setup
+    $('#colorWheel').colorPicker({
+        onChange: function(hsb, hex, rgb) {
+            // Update light color in real-time
+            console.log('Color changed to:', hex);
+        }
+    });
+
+    // Brightness slider
+    $('#brightnessSlider').on('input', function() {
+        // Animate brightness change
+        $('.control-panel').animate({opacity: this.value / 100}, 500);
+    });
+
+    // Simulate sun position (basic example)
+    function updateSunPosition(time) {
+        $('#sunPosition').html('☀️ ' + time);
+        // Here you would adjust lighting based on time of day
+    }
+
+    setInterval(() => {
+        let d = new Date();
+        updateSunPosition(d.toLocaleTimeString());
+    }, 1000);
+
+    // WebSocket for real-time updates (concept)
+    const socket = new WebSocket('ws://your-websocket-server');
+
+    socket.onmessage = function(event) {
+        $('#currentStatus').text('Current Status: ' + event.data);
+    };
+
+    // Room selection would trigger light changes in selected room
+    // This would involve more complex interaction with the 3D model
+});
+</script>
+
+</body>
+</html>

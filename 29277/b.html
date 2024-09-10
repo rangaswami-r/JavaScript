@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Home Lighting Controller</title>
+<style>
+    body { margin: 0; font-family: 'Arial', sans-serif; background: #f0f0f0; }
+    #controller { display: flex; height: 100vh; }
+    #threeDModel { width: 70%; background: #333; }
+    #controls { width: 30%; padding: 20px; background: #fff; box-shadow: -2px 0 5px rgba(0,0,0,0.1); }
+    #colorWheel, #brightnessSlider { margin: 20px 0; }
+    #sunPosition { height: 50px; background: linear-gradient(to right, #ffecd2 0%, #fcb69f 100%); position: relative; }
+    #sun { width: 30px; height: 30px; background: yellow; border-radius: 50%; position: absolute; }
+    #statusPanel { margin-top: 20px; }
+</style>
+</head>
+<body>
+<div id="controller">
+    <div id="threeDModel"></div>
+    <div id="controls">
+        <div id="colorWheel"></div>
+        <input type="range" min="0" max="100" value="50" class="slider" id="brightnessSlider">
+        <div id="sunPosition"><div id="sun"></div></div>
+        <div id="statusPanel">Current Status: <span id="currentStatus"></span></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/iro.js@5.5.2/dist/iro.min.js"></script>
+<script>
+    // Initialize 3D model
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth * 0.7, window.innerHeight);
+    document.getElementById('threeDModel').appendChild(renderer.domElement);
+
+    // Load house model (placeholder for actual model loading)
+    const loader = new THREE.GLTFLoader();
+    loader.load('path/to/house_model.gltf', function(gltf) {
+        scene.add(gltf.scene);
+    }, undefined, function(error) {
+        console.error(error);
+    });
+
+    camera.position.z = 5;
+
+    // Color wheel
+    const colorPicker = new iro.ColorPicker("#colorWheel", {
+        width: 280,
+        color: "#fff"
+    });
+
+    // Brightness slider
+    const brightnessSlider = document.getElementById('brightnessSlider');
+    brightnessSlider.oninput = function() {
+        updateLighting("brightness", this.value);
+    };
+
+    // Sun position simulation
+    function updateSunPosition() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6, 0, 0); // 6 AM
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18, 0, 0); // 6 PM
+        const progress = (now - start) / (end - start);
+        const sun = document.getElementById('sun');
+        sun.style.left = `${progress * 100}%`;
+        // Here you would also adjust the lighting based on time of day
+    }
+    updateSunPosition();
+    setInterval(updateSunPosition, 60000); // Update every minute
+
+    // Animation for brightness
+    function updateLighting(property, value) {
+        // This is a placeholder for actual light control logic
+        document.getElementById('currentStatus').textContent = `${property}: ${value}`;
+        // Implement WebSocket or AJAX call here to update real lights
+        // Animate change with CSS or JS
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Placeholder for room selection logic
+    document.getElementById('threeDModel').onclick = function(event) {
+        // Raycasting logic to select rooms would go here
+    };
+</script>
+</body>
+</html>

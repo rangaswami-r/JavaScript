@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Energy Trends Visualization</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        .container { width: 90%; margin: auto; overflow: hidden; }
+        .chart-container { width: 100%; height: 400px; margin-bottom: 20px; }
+        #map { height: 500px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Solar Energy Sector Trends (2017-2022)</h1>
+        <div class="chart-container" id="productionChart"></div>
+        <div class="chart-container" id="installationChart"></div>
+        <div id="timeline"></div>
+        <div id="map"></div>
+        <div class="chart-container" id="incentiveImpact"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@5"></script>
+
+    <script>
+    // Data for charts
+    const productionData = {
+        labels: ['2017', '2018', '2019', '2020', '2021', '2022'],
+        datasets: [{
+            label: 'Solar Energy Production',
+            data: [100, 140, 155, 165, 175, 185], // Example data: 40% increase in 2018
+            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+            borderColor: 'rgba(255, 206, 86, 1)',
+            borderWidth: 1
+        }]
+    };
+
+    const installationData = {
+        labels: ['2017', '2018', '2019', '2020', '2021', '2022'],
+        datasets: [{
+            label: 'New Solar Installations',
+            data: [100, 110, 120, 130, 140, 170], // 30% rise by 2022
+            borderColor: 'rgba(75, 192, 192, 1)',
+            fill: false
+        }]
+    };
+
+    // Charts
+    new Chart(document.getElementById('productionChart').getContext('2d'), {
+        type: 'bar',
+        data: productionData,
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('installationChart').getContext('2d'), {
+        type: 'line',
+        data: installationData,
+        options: { responsive: true }
+    });
+
+    // Timeline - Custom or using a library like TimelineJS
+    // Here's a simple static example, for dynamic, consider integrating TimelineJS or D3.js
+    const timeline = document.getElementById('timeline');
+    timeline.innerHTML = `<h2>Key Solar Advancements</h2>
+    <ul>
+        <li><b>2018:</b> Major breakthrough in perovskite solar cells efficiency.</li>
+        <li><b>2020:</b> Cost of solar power drops below coal in many regions.</li>
+        <li><b>2021:</b> SunPower launches new high-efficiency solar panel series.</li>
+    </ul>`;
+
+    // Map - Using Leaflet
+    const map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    // Add solar adoption data points or heat map here
+
+    // Incentive impact graph
+    new Chart(document.getElementById('incentiveImpact').getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: ['With Incentives', 'Without Incentives'],
+            datasets: [{
+                data: [70, 30], // Hypothetical data showing impact
+                backgroundColor: ['#FF6384', '#36A2EB']
+            }]
+        }
+    });
+    </script>
+</body>
+</html>

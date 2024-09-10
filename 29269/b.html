@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Energy Trends Visualization</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body { font-family: 'Arial', sans-serif; }
+        .chart-container, .map-container, .timeline-container { margin: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+        #solarMap { height: 400px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="text-center mt-4">Solar Energy Trends 2017-2022</h1>
+
+    <div class="row">
+        <div class="col-md-12 chart-container">
+            <canvas id="productionChart"></canvas>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 timeline-container">
+            <div id="timeline"></div>
+        </div>
+        <div class="col-md-6 map-container">
+            <div id="solarMap"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12 chart-container">
+            <canvas id="incentiveGraph"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/timelinejs@3.8.12/dist/js/timeline.min.js"></script>
+<script>
+    // Solar Production Chart
+    const productionChart = new Chart(document.getElementById('productionChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: ['2017', '2018', '2019', '2020', '2021', '2022'],
+            datasets: [{
+                label: 'Solar Energy Production (TWh)',
+                data: [460, 644, 837, 1088, 1414, 1838], // Example data, adjust as needed
+                borderColor: 'rgba(255, 159, 64, 1)',
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            title: { display: true, text: 'Solar Energy Production Increase' },
+            scales: {
+                yAxes: [{ticks: {beginAtZero: true}}]
+            }
+        }
+    });
+
+    // Timeline
+    const timelineData = [
+        {start_date: {'year': '2017'}, text: {headline: 'First Solar Series 6 launched'}},
+        {start_date: {'year': '2018'}, text: {headline: '40% Production Increase'}},
+        // Add more events here
+    ];
+    new TL.Timeline('timeline', {events: timelineData});
+
+    // Map
+    const solarMap = L.map('solarMap').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(solarMap);
+
+    // Add solar energy data points or layers here
+    // Example:
+    // L.geoJSON(solarData, {style: style, onEachFeature: onEachFeature}).addTo(solarMap);
+
+    // Incentive Impact Graph
+    const incentiveGraph = new Chart(document.getElementById('incentiveGraph').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['2017', '2018', '2019', '2020', '2021', '2022'],
+            datasets: [{
+                label: 'Installation Growth with Incentives',
+                data: [5, 7, 9, 11, 13, 17], // Example data, adjust as per real stats
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            title: { display: true, text: 'Impact of Government Incentives on Solar Installations' },
+            scales: {
+                yAxes: [{ticks: {beginAtZero: true}}]
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

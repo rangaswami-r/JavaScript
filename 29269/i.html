@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Energy Trends Visualization</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        #map { height: 400px; }
+        canvas { width: 100%; max-width: 800px; margin: 20px auto; display: block; }
+        .container { padding: 20px; }
+        .timeline { position: relative; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .timeline::before { content: ''; position: absolute; width: 2px; background: #ddd; top: 0; bottom: 0; left: 50%; margin-left: -1px; }
+        .timeline-item { position: relative; padding: 10px 40px; margin-bottom: 20px; background: #f9f9f9; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .timeline-item::before { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #2196F3; left: 50%; margin-left: -10px; top: 15px; z-index: 1; }
+        .timeline-item h3 { margin: 0 0 5px; color: #333; }
+        .timeline-item p { margin: 0; color: #666; }
+        .timeline-item:nth-child(odd) { left: 0; }
+        .timeline-item:nth-child(even) { left: 50%; }
+        .timeline-item:nth-child(even) .timeline-item-content { margin-left: 20px; }
+        .timeline-item:nth-child(odd) .timeline-item-content { margin-right: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Solar Energy Trends and Developments (2017-2022)</h1>
+
+        <div class="timeline">
+            <h2>Timeline of Key Advancements</h2>
+            <div id="timeline">
+                <!-- Timeline entries will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <canvas id="productionChart"></canvas>
+        <canvas id="installationsChart"></canvas>
+        <canvas id="incentivesChart"></canvas>
+
+        <div id="map"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chart.js setup
+            const ctxProduction = document.getElementById('productionChart').getContext('2d');
+            const ctxInstallations = document.getElementById('installationsChart').getContext('2d');
+            const ctxIncentives = document.getElementById('incentivesChart').getContext('2d');
+
+            // Solar Energy Production Chart
+            const productionChart = new Chart(ctxProduction, {
+                type: 'line',
+                data: {
+                    labels: ['2017', '2018', '2019', '2020', '2021', '2022'],
+                    datasets: [{
+                        label: 'Global Solar Energy Production (TWh)',
+                        data: [100, 140, 155, 160, 175, 185], // Example data
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { beginAtZero: true },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // New Solar Installations Chart
+            const installationsChart = new Chart(ctxInstallations, {
+                type: 'bar',
+                data: {
+                    labels: ['2017', '2018', '2019', '2020', '2021', '2022'],
+                    datasets: [{
+                        label: 'New Solar Installations (GW)',
+                        data: [30, 42, 55, 60, 72, 78], // Example data
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { beginAtZero: true },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Government Incentives and Subsidies Chart
+            const incentivesChart = new Chart(ctxIncentives, {
+                type: 'pie',
+                data: {
+                    labels: ['Tax Credits', 'Grants', 'Subsidies', 'Loans'],
+                    datasets: [{
+                        label: 'Impact of Government Incentives',
+                        data: [40, 20, 25, 15], // Example data
+                        backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)', 'rgba(255, 159, 64, 0.2)'],
+                        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+
+            // Timeline Setup
+            const timelineData = [
+                { year: '2017', event: 'Photovoltaic technology improvements' },
+                { year: '2018', event: '40% increase in solar energy production' },
+                { year: '2019', event: 'Decreasing installation costs' },
+                { year: '2020', event: 'SunPower and First Solar reach new milestones' },
+                { year: '2021', event: 'Significant rise in solar installations globally' },
+                { year: '2022', event: '30% increase in new solar installations' }
+            ];
+
+            const timelineElement = document.getElementById('timeline');
+            timelineData.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.classList.add('timeline-item');
+                if (index % 2 === 0) {
+                    div.innerHTML = `
+                        <h3>${item.year}</h3>
+                        <p>${item.event}</p>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <h3>${item.year}</h3>
+                        <p>${item.event}</p>
+                    `;
+                }
+                timelineElement.appendChild(div);
+            });
+
+            // Leaflet.js Map Setup
+            const map = L.map('map').setView([20, 0], 2);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            const solarAdoptionData = [
+                { country: 'China', proportion: 30, lat: 35.8617, lon: 104.1954 },
+                { country: 'USA', proportion: 20, lat: 37.0902, lon: -95.7129 },
+                { country: 'Germany', proportion: 10, lat: 51.1657, lon: 10.4515 },
+                { country: 'India', proportion: 15, lat: 20.5937, lon: 78.9629 },
+                { country: 'Japan', proportion: 10, lat: 36.2048, lon: 138.2529 }
+            ];
+
+            solarAdoptionData.forEach(data => {
+                L.circle([data.lat, data.lon], {
+                    color: 'blue',
+                    fillColor: '#30f',
+                    fillOpacity: 0.5,
+                    radius: data.proportion * 1000000
+                }).bindPopup(`<b>${data.country}</b><br>Proportion of global solar production: ${data.proportion}%`)
+                .addTo(map);
+            });
+        });
+    </script>
+</body>
+</html>
